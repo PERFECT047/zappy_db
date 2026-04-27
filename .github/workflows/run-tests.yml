@@ -1,0 +1,20 @@
+name: Run Tests
+
+on:
+  pull_request:
+    branches:
+      - dev-test
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Make script executable
+        run: chmod +x run_tests.sh
+
+      - name: Run tests
+        run: ./run_tests.sh
