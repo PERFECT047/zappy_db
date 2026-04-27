@@ -1,0 +1,16 @@
+name: Restrict merges to main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [[ "${{ github.head_ref }}" != "dev-test" ]]; then
+            echo "Only dev-test can merge into main"
+            exit 1
+          fi
