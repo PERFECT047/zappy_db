@@ -99,7 +99,7 @@ public class ListValueStore implements IListValueStore {
                 if(!keyStore.isEmpty()) {
                     String value = keyStore.remove(0);
 
-                    return List.of(listName, value);
+                    return List.of(value);
                 }
 
                 if(seconds == 0){
