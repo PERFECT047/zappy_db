@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - dev-test
+  push:
+    branches:
+      - dev-test
 
 jobs:
   test:
@@ -12,6 +15,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
 
       - name: Make script executable
         run: chmod +x run_tests.sh
