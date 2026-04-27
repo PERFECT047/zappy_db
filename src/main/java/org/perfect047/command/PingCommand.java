@@ -2,7 +2,6 @@ package org.perfect047.command;
 
 import org.perfect047.util.RespString;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
@@ -20,8 +19,8 @@ public class PingCommand extends BaseCommand implements ICommand{
             System.out.println(writeOut);
             this.getOutputStream().write(writeOut.getBytes());
         }
-        catch (IOException ex) {
-            System.out.println("Command Execution Exception: " + ex.getMessage());
+        catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 }

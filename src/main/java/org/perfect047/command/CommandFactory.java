@@ -5,26 +5,31 @@ import java.io.OutputStream;
 public class CommandFactory {
 
     public static ICommand getCommand(String commandName, OutputStream outputStream) {
-        ICommand command = null;
-        switch (commandName){
-            case "PING":
-                command = new PingCommand(outputStream);
-                break;
 
-            case "ECHO":
-                command = new EchoCommand(outputStream);
-                break;
+        return switch (commandName) {
 
-            case "SET":
-                command = new SetCommand(outputStream);
-                break;
+            case "PING" -> new PingCommand(outputStream);
 
-            case "GET":
-                command = new GetCommand(outputStream);
-                break;
-        }
+            case "ECHO" -> new EchoCommand(outputStream);
 
-        return command;
+            case "SET" -> new SetCommand(outputStream);
+
+            case "GET" -> new GetCommand(outputStream);
+
+            case "LPUSH" -> new LPushCommand(outputStream);
+
+            case "RPUSH" -> new RPushCommand(outputStream);
+
+            case "LRANGE" -> new LRangeCommand(outputStream);
+
+            case "LLEN" -> new LLenCommand(outputStream);
+
+            case "LPOP" -> new LPopCommand(outputStream);
+
+            case"BLPOP" -> new BLPopCommand(outputStream);
+
+            default -> null;
+        };
     }
 
 }

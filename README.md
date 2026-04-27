@@ -62,21 +62,22 @@ A high-performance, from-scratch implementation of an In-Memory Database in Java
 
 The server will start on port 6379 (default Redis port).
 
-### Testing with redis-cli
+### Testing
+
+Run the comprehensive test suite:
 
 ```bash
-# In another terminal
-redis-cli -p 6379
+# Run all tests
+./run_tests.sh
 
-127.0.0.1:6379> PING
-PONG
+# Or run tests with Maven
+mvn test
 
-127.0.0.1:6379> SET key value
-OK
-
-127.0.0.1:6379> GET key
-"value"
+# Run specific test class
+mvn test -Dtest=PingCommandTest
 ```
+
+The test suite covers all implemented commands with unit tests ensuring correct RESP protocol responses and data store operations.
 
 ## 🛠️ Development
 
