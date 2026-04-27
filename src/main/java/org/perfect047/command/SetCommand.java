@@ -1,7 +1,7 @@
 package org.perfect047.command;
 
-import org.perfect047.storage.keyvalue.IKeyValueStore;
 import org.perfect047.storage.StoreFactory;
+import org.perfect047.storage.keyvalue.IKeyValueStore;
 import org.perfect047.util.RespString;
 
 import java.io.OutputStream;
@@ -28,8 +28,8 @@ public class SetCommand extends BaseCommand implements ICommand{
             db.set(args.get(1), args.get(2), millis);
             this.getOutputStream().write(RespString.getRespSimpleString(List.of("OK")).getBytes());
         }
-        catch (Exception e){
-            System.out.println("Set Command Exception: " + e.getMessage());
+        catch (Exception ex){
+            ex.printStackTrace();
         }
 
     }

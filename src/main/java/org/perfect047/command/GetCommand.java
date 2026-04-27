@@ -1,7 +1,7 @@
 package org.perfect047.command;
 
-import org.perfect047.storage.keyvalue.IKeyValueStore;
 import org.perfect047.storage.StoreFactory;
+import org.perfect047.storage.keyvalue.IKeyValueStore;
 import org.perfect047.util.RespString;
 
 import java.io.OutputStream;
@@ -24,8 +24,8 @@ public class GetCommand extends BaseCommand implements ICommand {
                     value == null ? List.of() : List.of(value)
             ).getBytes());
         }
-        catch (Exception e){
-            System.err.println("Get Command Exception: " + e.getMessage());
+        catch (Exception ex){
+            ex.printStackTrace();
         }
 
     }
