@@ -1,0 +1,18 @@
+FROM maven:4.0.0-rc-5-eclipse-temurin-25-noble AS build
+
+WORKDIR /workspace
+COPY pom.xml ./
+COPY src ./src
+
+RUN mvn -q -DskipTests test-compile
+
+FROM eclipse-temurin:25
+
+WORKDIR /app
+
+COPY --from=build /workspace/target/classes ./target/classes
+COPY --from=build /workspace/target/test-classes ./target/test-classes
+
+ENV JAVA_TOOL_OPTIONS="-XX:ActiveProcessorCount=4 -Xms512m -Xmx512m"
+
+CMD ["java", "-cp", "target/classes:target/test-classes", "org.perfect047.benchmark.ZappyDbBenchmark"]
