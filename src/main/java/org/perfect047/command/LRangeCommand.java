@@ -1,35 +1,30 @@
 package org.perfect047.command;
 
-import org.perfect047.storage.StoreFactory;
 import org.perfect047.storage.listvalue.IListValueStore;
 import org.perfect047.util.RespString;
 
 import java.io.OutputStream;
 import java.util.List;
+import java.util.logging.Logger;
 
-public class LRangeCommand extends BaseCommand implements ICommand {
+public class LRangeCommand extends ListValueCommand implements ICommand {
 
-    public LRangeCommand(OutputStream outputStream) {
-        super(outputStream);
+    private static final Logger LOGGER = Logger.getLogger(LRangeCommand.class.getName());
+
+    public LRangeCommand(OutputStream outputStream, IListValueStore listValueStore) {
+        super(outputStream, listValueStore);
     }
 
-
     @Override
-    public void execute(List<String> args) {
-        IListValueStore db = StoreFactory.getListValueStore();
-
-        try {
-            System.out.println(args);
-            String listName = args.get(1);
-
-            Integer startIndex = Integer.parseInt(args.get(2));
-            Integer endIndex = Integer.parseInt(args.get(3));
-
-            getOutputStream().write(RespString.getRespArrayString(db.get(listName, startIndex, endIndex)).getBytes());
-
+    public void execute(List<String> args) throws Exception {
+        if (args.size() < 4) {
+            throw new IllegalArgumentException("LRANGE command requires list name, start index, and end index");
         }
-        catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        LOGGER.fine("LRANGE command args: " + args);
+        String listName = args.get(1);
+        Integer startIndex = Integer.parseInt(args.get(2));
+        Integer endIndex = Integer.parseInt(args.get(3));
+
+        getOutputStream().write(RespString.getRespArrayString(listValueStore.get(listName, startIndex, endIndex)).getBytes());
     }
 }
