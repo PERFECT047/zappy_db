@@ -1,32 +1,25 @@
 package org.perfect047.command;
 
-import org.perfect047.storage.StoreFactory;
 import org.perfect047.storage.keyvalue.IKeyValueStore;
 import org.perfect047.util.RespString;
 
 import java.io.OutputStream;
 import java.util.List;
 
-public class GetCommand extends BaseCommand implements ICommand {
+public class GetCommand extends KeyValueCommand implements ICommand {
 
-    public GetCommand(OutputStream outputStream) {
-        super(outputStream);
+    public GetCommand(OutputStream outputStream, IKeyValueStore keyValueStore) {
+        super(outputStream, keyValueStore);
     }
 
     @Override
-    public void execute(List<String> args) {
-        IKeyValueStore db = StoreFactory.getKeyValueStore();
-
-        try{
-            String value = db.get(args.get(1));
-
-            this.getOutputStream().write(RespString.getRespBulkString(
-                    value == null ? List.of() : List.of(value)
-            ).getBytes());
+    public void execute(List<String> args) throws Exception {
+        if (args.size() < 2) {
+            throw new IllegalArgumentException("GET command requires a key");
         }
-        catch (Exception ex){
-            ex.printStackTrace();
-        }
-
+        String value = keyValueStore.get(args.get(1));
+        this.getOutputStream().write(RespString.getRespBulkString(
+                value == null ? List.of() : List.of(value)
+        ).getBytes());
     }
 }

@@ -1,7 +1,8 @@
 package org.perfect047.command;
 
 import org.junit.jupiter.api.Test;
-import org.perfect047.storage.StoreFactory;
+import org.perfect047.storage.listvalue.IListValueStore;
+import org.perfect047.storage.listvalue.ListValueStore;
 import org.perfect047.util.RespString;
 
 import java.io.ByteArrayOutputStream;
@@ -15,12 +16,13 @@ public class BLPopCommandTest {
     @Test
     public void testBLPopCommand() throws Exception {
         String listName = "test_list_" + UUID.randomUUID();
+        IListValueStore listValueStore = new ListValueStore();
 
         // Setup list
-        StoreFactory.getListValueStore().leftAdd(listName, List.of("value1"));
+        listValueStore.leftAdd(listName, List.of("value1"));
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        BLPopCommand blPopCommand = new BLPopCommand(outputStream);
+        BLPopCommand blPopCommand = new BLPopCommand(outputStream, listValueStore);
 
         blPopCommand.execute(List.of("BLPOP", listName, "1"));
 

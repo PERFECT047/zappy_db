@@ -1,7 +1,8 @@
 package org.perfect047.command;
 
 import org.junit.jupiter.api.Test;
-import org.perfect047.storage.StoreFactory;
+import org.perfect047.storage.keyvalue.IKeyValueStore;
+import org.perfect047.storage.keyvalue.KeyValueKeyValueStore;
 import org.perfect047.util.RespString;
 
 import java.io.ByteArrayOutputStream;
@@ -16,12 +17,13 @@ public class GetCommandTest {
     public void testGetCommand() throws Exception {
         String key = "test_key_" + UUID.randomUUID();
         String value = "test_value";
+        IKeyValueStore keyValueStore = new KeyValueKeyValueStore();
 
         // Set a value first
-        StoreFactory.getKeyValueStore().set(key, value, null);
+        keyValueStore.set(key, value, null);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        GetCommand getCommand = new GetCommand(outputStream);
+        GetCommand getCommand = new GetCommand(outputStream, keyValueStore);
 
         getCommand.execute(List.of("GET", key));
 
@@ -32,9 +34,10 @@ public class GetCommandTest {
     @Test
     public void testGetCommandNonExistentKey() throws Exception {
         String key = "non_existent_" + UUID.randomUUID();
+        IKeyValueStore keyValueStore = new KeyValueKeyValueStore();
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        GetCommand getCommand = new GetCommand(outputStream);
+        GetCommand getCommand = new GetCommand(outputStream, keyValueStore);
 
         getCommand.execute(List.of("GET", key));
 
