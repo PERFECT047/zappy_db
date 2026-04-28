@@ -9,8 +9,9 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          if [[ "${{ github.head_ref }}" != "dev-test" ]]; then
+      - name: Enforce branch policy
+        run: |
+          if [[ "${{ github.base_ref }}" == "main" && "${{ github.head_ref }}" != "dev-test" ]]; then
             echo "Only dev-test can merge into main"
             exit 1
           fi
