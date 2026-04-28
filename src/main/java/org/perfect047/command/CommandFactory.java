@@ -1,35 +1,47 @@
 package org.perfect047.command;
 
-import java.io.OutputStream;
+import org.perfect047.storage.keyvalue.IKeyValueStore;
+import org.perfect047.storage.listvalue.IListValueStore;
 
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+/**
+ * Creates command instances for a client connection while keeping store wiring centralized.
+ */
 public class CommandFactory {
 
-    public static ICommand getCommand(String commandName, OutputStream outputStream) {
+    private final IKeyValueStore keyValueStore;
+    private final IListValueStore listValueStore;
+    private final Map<String, Function<OutputStream, ICommand>> commandRegistry = new HashMap<>();
 
-        return switch (commandName) {
-
-            case "PING" -> new PingCommand(outputStream);
-
-            case "ECHO" -> new EchoCommand(outputStream);
-
-            case "SET" -> new SetCommand(outputStream);
-
-            case "GET" -> new GetCommand(outputStream);
-
-            case "LPUSH" -> new LPushCommand(outputStream);
-
-            case "RPUSH" -> new RPushCommand(outputStream);
-
-            case "LRANGE" -> new LRangeCommand(outputStream);
-
-            case "LLEN" -> new LLenCommand(outputStream);
-
-            case "LPOP" -> new LPopCommand(outputStream);
-
-            case"BLPOP" -> new BLPopCommand(outputStream);
-
-            default -> null;
-        };
+    /**
+     * @param keyValueStore backing store for key-value commands
+     * @param listValueStore backing store for list commands
+     */
+    public CommandFactory(IKeyValueStore keyValueStore, IListValueStore listValueStore) {
+        this.keyValueStore = keyValueStore;
+        this.listValueStore = listValueStore;
+        registerCommands();
     }
 
+    private void registerCommands() {
+        commandRegistry.put("PING", PingCommand::new);
+        commandRegistry.put("ECHO", EchoCommand::new);
+        commandRegistry.put("SET", os -> new SetCommand(os, keyValueStore));
+        commandRegistry.put("GET", os -> new GetCommand(os, keyValueStore));
+        commandRegistry.put("LPUSH", os -> new LPushCommand(os, listValueStore));
+        commandRegistry.put("RPUSH", os -> new RPushCommand(os, listValueStore));
+        commandRegistry.put("LRANGE", os -> new LRangeCommand(os, listValueStore));
+        commandRegistry.put("LLEN", os -> new LLenCommand(os, listValueStore));
+        commandRegistry.put("LPOP", os -> new LPopCommand(os, listValueStore));
+        commandRegistry.put("BLPOP", os -> new BLPopCommand(os, listValueStore));
+    }
+
+    public ICommand getCommand(String commandName, OutputStream outputStream) {
+        Function<OutputStream, ICommand> creator = commandRegistry.get(commandName.toUpperCase());
+        return creator != null ? creator.apply(outputStream) : null;
+    }
 }

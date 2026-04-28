@@ -4,23 +4,21 @@ import org.perfect047.util.RespString;
 
 import java.io.OutputStream;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class PingCommand extends BaseCommand implements ICommand{
 
-    PingCommand(OutputStream outputStream){
+    private static final Logger LOGGER = Logger.getLogger(PingCommand.class.getName());
+
+    public PingCommand(OutputStream outputStream){
         super(outputStream);
     }
 
     @Override
-    public void execute(List<String> args) {
-        System.out.println("Ping Command");
-        try {
-            String writeOut = RespString.getRespSimpleString(List.of("PONG"));
-            System.out.println(writeOut);
-            this.getOutputStream().write(writeOut.getBytes());
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-        }
+    public void execute(List<String> args) throws Exception {
+        LOGGER.fine("Executing PING command");
+        String writeOut = RespString.getRespSimpleString(List.of("PONG"));
+        LOGGER.fine("PING response: " + writeOut);
+        this.getOutputStream().write(writeOut.getBytes());
     }
 }

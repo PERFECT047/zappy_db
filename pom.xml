@@ -33,9 +33,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <compilerArgs>
-                        <arg>--enable-preview</arg>
-                    </compilerArgs>
+                    <!-- Preview features only work with Java 26+, disabled for Java 25 -->
                 </configuration>
             </plugin>
             <plugin>

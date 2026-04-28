@@ -7,9 +7,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Logger;
 
 public class ListValueStore implements IListValueStore {
 
+    private static final Logger LOGGER = Logger.getLogger(ListValueStore.class.getName());
     private final ConcurrentMap<String, List<String>> store = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ReentrantLock> locks = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Condition> conditions = new ConcurrentHashMap<>();
@@ -118,42 +120,58 @@ public class ListValueStore implements IListValueStore {
 
     @Override
     public List<String> get(String listName, Integer startIndex, Integer endIndex) {
-        if(!store.containsKey(listName)) return List.of();
+        ReentrantLock lock = locks.get(listName);
 
-        List<String> keyStore = store.get(listName);
+        if(lock == null) return List.of();
 
-        if(keyStore.isEmpty()) return List.of();
+        lock.lock();
 
-        int iniSize = keyStore.size();
+        try{
+            List<String> keyStore = store.get(listName);
 
-        // Normalize negative indices
+            if(keyStore == null || keyStore.isEmpty()) return List.of();
 
-        if (startIndex < 0) startIndex += iniSize;
-        if (endIndex < 0) endIndex += iniSize;
+            int iniSize = keyStore.size();
 
-        // Clamp to bounds
+            // Normalize negative indices
 
-        startIndex = Math.max(0, startIndex);
-        endIndex = Math.min(iniSize - 1, endIndex);
+            if (startIndex < 0) startIndex += iniSize;
+            if (endIndex < 0) endIndex += iniSize;
 
-        System.out.println("====== After Normalisation =======");
-        System.out.print("Start index: " + startIndex);
-        System.out.println(", end index: " + endIndex);
+            // Clamp to bounds
 
-        //Empty Range check
+            startIndex = Math.max(0, startIndex);
+            endIndex = Math.min(iniSize - 1, endIndex);
 
-        if(startIndex > endIndex) return List.of();
+            LOGGER.fine("After index normalization - start: " + startIndex + ", end: " + endIndex);
 
-        System.out.print("Start index: " + startIndex);
-        System.out.println(", end index: " + endIndex);
+            //Empty Range check
 
-        return new ArrayList<>(keyStore.subList(startIndex, endIndex + 1));
+            if(startIndex > endIndex) return List.of();
+
+            LOGGER.fine("Final indices - start: " + startIndex + ", end: " + endIndex);
+
+            return new ArrayList<>(keyStore.subList(startIndex, endIndex + 1));
+        }
+        finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public Integer getSize(String listName) {
-        if(!store.containsKey(listName)) return null;
+        ReentrantLock lock = locks.get(listName);
 
-        return store.get(listName).size();
+        if(lock == null) return null;
+
+        lock.lock();
+
+        try{
+            List<String> keyStore = store.get(listName);
+            return keyStore == null ? null : keyStore.size();
+        }
+        finally {
+            lock.unlock();
+        }
     }
 }

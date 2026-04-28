@@ -1,7 +1,8 @@
 package org.perfect047.command;
 
 import org.junit.jupiter.api.Test;
-import org.perfect047.storage.StoreFactory;
+import org.perfect047.storage.keyvalue.IKeyValueStore;
+import org.perfect047.storage.keyvalue.KeyValueKeyValueStore;
 import org.perfect047.util.RespString;
 
 import java.io.ByteArrayOutputStream;
@@ -15,8 +16,9 @@ public class SetCommandTest {
     @Test
     public void testSetCommand() throws Exception {
         String key = "test_key_" + UUID.randomUUID();
+        IKeyValueStore keyValueStore = new KeyValueKeyValueStore();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        SetCommand setCommand = new SetCommand(outputStream);
+        SetCommand setCommand = new SetCommand(outputStream, keyValueStore);
 
         setCommand.execute(List.of("SET", key, "value"));
 
@@ -24,7 +26,7 @@ public class SetCommandTest {
         assertEquals(expected, outputStream.toString());
 
         // Verify the value was set
-        String value = StoreFactory.getKeyValueStore().get(key);
+        String value = keyValueStore.get(key);
         assertEquals("value", value);
     }
 }

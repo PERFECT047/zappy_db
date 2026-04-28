@@ -4,34 +4,34 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-// TODO: Active expired keys cleanup
+/**
+ * In-memory key-value store with support for key expiration.
+ * Handles storage operations with thread-safe access using locks and manages expiry.
+ */
 public class KeyValueKeyValueStore implements IKeyValueStore {
 
-    private final ConcurrentMap<String,String> store = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ReentrantReadWriteLock> lockManager = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, Long> expiry = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, String> store = new ConcurrentHashMap<>();
+    private final LockManager lockManager = new LockManager();
+    private final ExpiryManager expiryManager = new ExpiryManager();
 
     @Override
     public boolean set(String key, String value, Long millis) {
-        lockManager.putIfAbsent(key, new ReentrantReadWriteLock());
-        lockManager.get(key).writeLock().lock();
+        ReentrantReadWriteLock lock = lockManager.getLock(key);
+        lock.writeLock().lock();
 
         try {
-            store.put(key,value);
-
-            if(millis != null) expiry.put(key,System.currentTimeMillis() + millis);
-
+            store.put(key, value);
+            expiryManager.setExpiry(key, millis);
+            return true;
         }
         finally {
-            lockManager.get(key).writeLock().unlock();
+            lock.writeLock().unlock();
         }
-
-        return true;
     }
 
     @Override
     public String get(String key) {
-        ReentrantReadWriteLock lock = lockManager.get(key);
+        ReentrantReadWriteLock lock = lockManager.getLock(key);
 
         if (lock == null) {
             return null;
@@ -39,11 +39,8 @@ public class KeyValueKeyValueStore implements IKeyValueStore {
 
         lock.readLock().lock();
         try {
-
-            if(expiry.get(key) != null && expiry.get(key) <= System.currentTimeMillis() ){
-                store.remove(key);
-                expiry.remove(key);
-
+            if(expiryManager.isExpired(key)){
+                handleExpiredKey(key);
                 return null;
             }
 
@@ -51,6 +48,24 @@ public class KeyValueKeyValueStore implements IKeyValueStore {
         } finally {
             lock.readLock().unlock();
         }
+    }
 
+    /**
+     * Handles cleanup when a key has expired.
+     * @param key The expired key to remove
+     */
+    private void handleExpiredKey(String key) {
+        // Need to acquire write lock for cleanup
+        ReentrantReadWriteLock lock = lockManager.getLock(key);
+        lock.readLock().unlock();
+        lock.writeLock().lock();
+        
+        try {
+            store.remove(key);
+            expiryManager.removeExpiry(key);
+        } finally {
+            lock.writeLock().unlock();
+            lock.readLock().lock();
+        }
     }
 }
