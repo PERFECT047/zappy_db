@@ -207,4 +207,8 @@ public class StreamValueStore implements IStreamValueStore{
         }
     }
 
+    @Override
+    public String type(String key) {
+        return store.get(key) != null ? "stream" : null;
+    }
 }

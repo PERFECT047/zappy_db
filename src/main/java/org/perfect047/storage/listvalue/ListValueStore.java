@@ -174,4 +174,9 @@ public class ListValueStore implements IListValueStore {
             lock.unlock();
         }
     }
+
+    @Override
+    public String type(String key) {
+        return store.get(key) != null ? "list" : null;
+    }
 }

@@ -43,6 +43,9 @@ public class CommandFactory {
         commandRegistry.put("LPOP", os -> new LPopCommand(os, listValueStore));
         commandRegistry.put("BLPOP", os -> new BLPopCommand(os, listValueStore));
         commandRegistry.put("XADD", os -> new XAddCommand(os, streamValueStore));
+        commandRegistry.put("XRANGE", os -> new XRangeCommand(os, streamValueStore));
+        commandRegistry.put("XREAD", os -> new XReadCommand(os, streamValueStore));
+        commandRegistry.put("TYPE", os -> new TypeCommand(os, streamValueStore, keyValueStore, listValueStore));
     }
 
     public ICommand getCommand(String commandName, OutputStream outputStream) {

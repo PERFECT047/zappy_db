@@ -10,7 +10,7 @@ public class StreamValueCommand extends BaseCommand{
 
     /**
      * @param outputStream stream bound to the current client connection
-     * @param streamValueStore store used by list commands
+     * @param streamValueStore store used by stream commands
      */
     protected StreamValueCommand(OutputStream outputStream, IStreamValueStore streamValueStore) {
         super(outputStream);

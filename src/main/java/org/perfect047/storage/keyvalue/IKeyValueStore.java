@@ -1,6 +1,8 @@
 package org.perfect047.storage.keyvalue;
 
-public interface IKeyValueStore {
+import org.perfect047.storage.ITypeStore;
+
+public interface IKeyValueStore extends ITypeStore {
 
     boolean set(String key, String value, Long millis);
 

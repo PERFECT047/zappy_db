@@ -68,4 +68,9 @@ public class KeyValueStore implements IKeyValueStore {
             lock.readLock().lock();
         }
     }
+
+    @Override
+    public String type(String key) {
+        return store.get(key) != null ? "string" : null;
+    }
 }
