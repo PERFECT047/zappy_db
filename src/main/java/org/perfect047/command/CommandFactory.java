@@ -2,6 +2,8 @@ package org.perfect047.command;
 
 import org.perfect047.storage.keyvalue.IKeyValueStore;
 import org.perfect047.storage.listvalue.IListValueStore;
+import org.perfect047.storage.streamvalue.IStreamValueStore;
+import org.perfect047.storage.streamvalue.StreamValueStore;
 
 import java.io.OutputStream;
 import java.util.HashMap;
@@ -15,15 +17,17 @@ public class CommandFactory {
 
     private final IKeyValueStore keyValueStore;
     private final IListValueStore listValueStore;
+    private final IStreamValueStore streamValueStore;
     private final Map<String, Function<OutputStream, ICommand>> commandRegistry = new HashMap<>();
 
     /**
      * @param keyValueStore backing store for key-value commands
      * @param listValueStore backing store for list commands
      */
-    public CommandFactory(IKeyValueStore keyValueStore, IListValueStore listValueStore) {
+    public CommandFactory(IKeyValueStore keyValueStore, IListValueStore listValueStore, IStreamValueStore streamValueStore) {
         this.keyValueStore = keyValueStore;
         this.listValueStore = listValueStore;
+        this.streamValueStore = streamValueStore;
         registerCommands();
     }
 
@@ -38,6 +42,7 @@ public class CommandFactory {
         commandRegistry.put("LLEN", os -> new LLenCommand(os, listValueStore));
         commandRegistry.put("LPOP", os -> new LPopCommand(os, listValueStore));
         commandRegistry.put("BLPOP", os -> new BLPopCommand(os, listValueStore));
+        commandRegistry.put("XADD", os -> new XAddCommand(os, streamValueStore));
     }
 
     public ICommand getCommand(String commandName, OutputStream outputStream) {
