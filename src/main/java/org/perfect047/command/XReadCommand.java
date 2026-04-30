@@ -16,6 +16,10 @@ public class XReadCommand extends StreamValueCommand implements ICommand {
     @Override
     public void execute(List<String> args) throws Exception {
 
+        if (args.size() < 4) {
+            throw new IllegalArgumentException("Invalid XREAD arguments");
+        }
+
         int index = 1;
         long blockTime = -1;
 
@@ -51,12 +55,12 @@ public class XReadCommand extends StreamValueCommand implements ICommand {
 
         for (int i = 0; i < n; i++) {
             String key = keys.get(i);
-            String id  = resolveId(keys.get(i), ids.get(i));
+            String id = resolveId(key, ids.get(i));
 
             List<Object> result = handleReadOrBlock(key, id, blockTime);
 
             if (result != null && !result.isEmpty()) {
-                finalResult.add(result.get(0));
+                finalResult.add(List.of(key, result));
             }
         }
 
@@ -79,7 +83,21 @@ public class XReadCommand extends StreamValueCommand implements ICommand {
      */
     private String resolveId(String key, String id) {
         if ("$".equals(id)) {
-            return streamValueStore.getLastId(key);
+            String lastId = streamValueStore.getLastId(key);
+
+            if (lastId == null) {
+                return "0-0";
+            }
+
+            String[] parts = lastId.split("-");
+            long ms = Long.parseLong(parts[0]);
+            long seq = Long.parseLong(parts[1]);
+
+            if (seq > 0) {
+                return ms + "-" + (seq - 1);
+            } else {
+                return (ms - 1) + "-0";
+            }
         }
         return id;
     }

@@ -27,9 +27,15 @@ public class XRangeCommand extends StreamValueCommand implements ICommand{
 
         List<Object> result = streamValueStore.range(streamName, start, end);
 
-        getOutputStream().write(
-                RespString.getRespArrayString(result).getBytes()
-        );
+        if (result == null || result.isEmpty()) {
+            getOutputStream().write(
+                    RespString.getRespArrayString(List.of()).getBytes()
+            );
+        } else {
+            getOutputStream().write(
+                    RespString.getRespArrayString(result).getBytes()
+            );
+        }
     }
 
 }

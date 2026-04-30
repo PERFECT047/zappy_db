@@ -39,6 +39,6 @@ public class TypeCommand extends StoresCommand implements ICommand{
         String listType = listValueStore.type(key);
         String streamType = streamValueStore.type(key);
 
-        return keyType != null ? keyType : listType != null ? listType : streamType;
+        return keyType != null ? keyType : listType != null ? listType : streamType != null ? streamType : "none";
     }
 }

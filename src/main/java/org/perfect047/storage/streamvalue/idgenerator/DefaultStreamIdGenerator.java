@@ -74,12 +74,12 @@ public class DefaultStreamIdGenerator implements IStreamIdGenerator {
             ConcurrentMap<String, Long> lastMsMap) {
 
         if (cursor.ms == 0 && cursor.seq == 0) {
-            throw new RuntimeException("ERR The ID specified in XADD must be greater than 0-0");
+            throw new IllegalArgumentException("ERR The ID specified in XADD must be greater than 0-0");
         }
 
         Long lastMs = lastMsMap.get(streamName);
         if (lastMs != null && cursor.ms < lastMs) {
-            throw new RuntimeException("ERR The ID specified in XADD is equal or smaller than the target stream top item");
+            throw new IllegalArgumentException("ERR The ID specified in XADD is equal or smaller than the target stream top item");
         }
     }
 
@@ -102,7 +102,7 @@ public class DefaultStreamIdGenerator implements IStreamIdGenerator {
         if (lastEntry != null) {
             long lastSeq = extractLastSeq(lastEntry);
             if (newSeq <= lastSeq) {
-                throw new RuntimeException("ERR The ID specified in XADD is equal or smaller than the target stream top item");
+                throw new IllegalArgumentException("ERR The ID specified in XADD is equal or smaller than the target stream top item");
             }
         }
 

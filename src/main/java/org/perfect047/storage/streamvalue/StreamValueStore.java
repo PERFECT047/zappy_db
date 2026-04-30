@@ -128,8 +128,13 @@ public class StreamValueStore implements IStreamValueStore{
         IdCursor startCursor = IdCursor.parseStart(start);
         IdCursor endCursor = IdCursor.parseEnd(end);
 
-        NavigableMap<Long, Deque<Map<String, String>>> subMap =
-                timeMap.subMap(startCursor.ms, true, endCursor.ms, true);
+        NavigableMap<Long, Deque<Map<String, String>>> subMap;
+
+        try {
+            subMap = timeMap.subMap(startCursor.ms, true, endCursor.ms, true);
+        } catch (IllegalArgumentException e) {
+            return List.of();
+        }
 
         List<Object> result = new ArrayList<>();
 
@@ -201,7 +206,7 @@ public class StreamValueStore implements IStreamValueStore{
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return null;
+            return List.of();
         } finally {
             lockEntry.lock.unlock();
         }
