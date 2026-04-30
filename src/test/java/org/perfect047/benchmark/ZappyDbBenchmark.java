@@ -2,7 +2,7 @@ package org.perfect047.benchmark;
 
 import org.perfect047.command.CommandFactory;
 import org.perfect047.command.ICommand;
-import org.perfect047.storage.keyvalue.KeyValueKeyValueStore;
+import org.perfect047.storage.keyvalue.KeyValueStore;
 import org.perfect047.storage.listvalue.ListValueStore;
 import org.perfect047.util.EnvLoader;
 
@@ -664,7 +664,7 @@ public final class ZappyDbBenchmark {
     }
 
     private static final class LocalBenchmarkEnvironment implements BenchmarkEnvironment {
-        private final KeyValueKeyValueStore keyValueStore = new KeyValueKeyValueStore();
+        private final KeyValueStore keyValueStore = new KeyValueStore();
         private final ListValueStore listValueStore = new ListValueStore();
         private final CommandFactory commandFactory = new CommandFactory(keyValueStore, listValueStore);
 

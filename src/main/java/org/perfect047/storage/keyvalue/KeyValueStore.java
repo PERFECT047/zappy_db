@@ -8,7 +8,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * In-memory key-value store with support for key expiration.
  * Handles storage operations with thread-safe access using locks and manages expiry.
  */
-public class KeyValueKeyValueStore implements IKeyValueStore {
+public class KeyValueStore implements IKeyValueStore {
 
     private final ConcurrentMap<String, String> store = new ConcurrentHashMap<>();
     private final LockManager lockManager = new LockManager();

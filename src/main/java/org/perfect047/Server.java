@@ -4,7 +4,7 @@ import org.perfect047.command.CommandFactory;
 import org.perfect047.concurrency.ConcurrencyFactory;
 import org.perfect047.concurrency.IConcurrencyStrategy;
 import org.perfect047.storage.keyvalue.IKeyValueStore;
-import org.perfect047.storage.keyvalue.KeyValueKeyValueStore;
+import org.perfect047.storage.keyvalue.KeyValueStore;
 import org.perfect047.storage.listvalue.IListValueStore;
 import org.perfect047.storage.listvalue.ListValueStore;
 
@@ -25,7 +25,7 @@ public class Server {
      * Creates the default server with in-memory stores and configured concurrency strategy.
      */
     public Server() {
-        this(new KeyValueKeyValueStore(), new ListValueStore(), new ConcurrencyFactory());
+        this(new KeyValueStore(), new ListValueStore(), new ConcurrencyFactory());
     }
 
     /**
