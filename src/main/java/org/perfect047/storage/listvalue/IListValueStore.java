@@ -1,4 +1,5 @@
 package org.perfect047.storage.listvalue;
 
-public interface IListValueStore extends IListWriter, IListReader, IBlockingListReader
-{}
+import org.perfect047.storage.ITypeStore;
+
+public interface IListValueStore extends IListWriter, IListReader, IBlockingListReader, ITypeStore {}

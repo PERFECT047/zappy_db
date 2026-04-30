@@ -2,7 +2,7 @@ package org.perfect047.command;
 
 import org.junit.jupiter.api.Test;
 import org.perfect047.storage.keyvalue.IKeyValueStore;
-import org.perfect047.storage.keyvalue.KeyValueKeyValueStore;
+import org.perfect047.storage.keyvalue.KeyValueStore;
 import org.perfect047.util.RespString;
 
 import java.io.ByteArrayOutputStream;
@@ -17,7 +17,7 @@ public class GetCommandTest {
     public void testGetCommand() throws Exception {
         String key = "test_key_" + UUID.randomUUID();
         String value = "test_value";
-        IKeyValueStore keyValueStore = new KeyValueKeyValueStore();
+        IKeyValueStore keyValueStore = new KeyValueStore();
 
         // Set a value first
         keyValueStore.set(key, value, null);
@@ -34,7 +34,7 @@ public class GetCommandTest {
     @Test
     public void testGetCommandNonExistentKey() throws Exception {
         String key = "non_existent_" + UUID.randomUUID();
-        IKeyValueStore keyValueStore = new KeyValueKeyValueStore();
+        IKeyValueStore keyValueStore = new KeyValueStore();
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         GetCommand getCommand = new GetCommand(outputStream, keyValueStore);

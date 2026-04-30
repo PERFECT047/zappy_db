@@ -4,9 +4,11 @@ import org.perfect047.command.CommandFactory;
 import org.perfect047.concurrency.ConcurrencyFactory;
 import org.perfect047.concurrency.IConcurrencyStrategy;
 import org.perfect047.storage.keyvalue.IKeyValueStore;
-import org.perfect047.storage.keyvalue.KeyValueKeyValueStore;
+import org.perfect047.storage.keyvalue.KeyValueStore;
 import org.perfect047.storage.listvalue.IListValueStore;
 import org.perfect047.storage.listvalue.ListValueStore;
+import org.perfect047.storage.streamvalue.IStreamValueStore;
+import org.perfect047.storage.streamvalue.StreamValueStore;
 
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -25,7 +27,7 @@ public class Server {
      * Creates the default server with in-memory stores and configured concurrency strategy.
      */
     public Server() {
-        this(new KeyValueKeyValueStore(), new ListValueStore(), new ConcurrencyFactory());
+        this(new KeyValueStore(), new ListValueStore(), new StreamValueStore(), new ConcurrencyFactory());
     }
 
     /**
@@ -35,8 +37,8 @@ public class Server {
      * @param listValueStore list-value store implementation
      * @param concurrencyFactory factory that selects the connection handling strategy
      */
-    public Server(IKeyValueStore keyValueStore, IListValueStore listValueStore, ConcurrencyFactory concurrencyFactory) {
-        this(new CommandFactory(keyValueStore, listValueStore), concurrencyFactory);
+    public Server(IKeyValueStore keyValueStore, IListValueStore listValueStore, IStreamValueStore streamValueStore, ConcurrencyFactory concurrencyFactory) {
+        this(new CommandFactory(keyValueStore, listValueStore, streamValueStore), concurrencyFactory);
     }
 
     /**

@@ -13,13 +13,13 @@ public class ListValueStore implements IListValueStore {
 
     private static final Logger LOGGER = Logger.getLogger(ListValueStore.class.getName());
     private final ConcurrentMap<String, List<String>> store = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ReentrantLock> locks = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, Condition> conditions = new ConcurrentHashMap<>();
+    private final LockManager lockManager = new LockManager();
+    private final ConditionManager conditionManager = new ConditionManager();
 
     @Override
     public Integer leftAdd(String listName, List<String> values) {
-        ReentrantLock lock = locks.computeIfAbsent(listName, k -> new ReentrantLock());
-        Condition condition = conditions.computeIfAbsent(listName, k -> lock.newCondition());
+        ReentrantLock lock = lockManager.getLock(listName);
+        Condition condition = conditionManager.getCondition(listName, lock);
 
         List<String> reversed = new ArrayList<>(values);
         Collections.reverse(reversed);
@@ -41,8 +41,8 @@ public class ListValueStore implements IListValueStore {
 
     @Override
     public Integer rightAdd(String listName, List<String> values) {
-        ReentrantLock lock = locks.computeIfAbsent(listName, k -> new ReentrantLock());
-        Condition condition = conditions.computeIfAbsent(listName, k -> lock.newCondition());
+        ReentrantLock lock = lockManager.getLock(listName);
+        Condition condition = conditionManager.getCondition(listName, lock);
 
         lock.lock();
 
@@ -60,8 +60,8 @@ public class ListValueStore implements IListValueStore {
     }
 
     @Override
-    public List<String> leftPop(String listName, Integer repetations) {
-        ReentrantLock lock = locks.get(listName);
+    public List<String> leftPop(String listName, Integer repetitions) {
+        ReentrantLock lock = lockManager.getAlreadyPresentLock(listName);
 
         if(lock == null) return null;
 
@@ -72,7 +72,7 @@ public class ListValueStore implements IListValueStore {
 
             if (list == null || list.isEmpty()) return null;
 
-            int n = Math.min(repetations, list.size());
+            int n = Math.min(repetitions, list.size());
             List<String> removed = new ArrayList<>(list.subList(0, n));
 
             list.subList(0, n).clear();
@@ -87,8 +87,8 @@ public class ListValueStore implements IListValueStore {
 
     @Override
     public List<String> blockingLeftPop(String listName, Float seconds) throws InterruptedException {
-        ReentrantLock lock = locks.computeIfAbsent(listName, k -> new ReentrantLock());
-        Condition condition = conditions.computeIfAbsent(listName, k -> lock.newCondition());
+        ReentrantLock lock = lockManager.getLock(listName);
+        Condition condition = conditionManager.getCondition(listName, lock);
 
         long nanos = seconds > 0 ? (long) (seconds * 1_000_000_000L) : 0;
 
@@ -120,7 +120,7 @@ public class ListValueStore implements IListValueStore {
 
     @Override
     public List<String> get(String listName, Integer startIndex, Integer endIndex) {
-        ReentrantLock lock = locks.get(listName);
+        ReentrantLock lock = lockManager.getAlreadyPresentLock(listName);
 
         if(lock == null) return List.of();
 
@@ -160,7 +160,7 @@ public class ListValueStore implements IListValueStore {
 
     @Override
     public Integer getSize(String listName) {
-        ReentrantLock lock = locks.get(listName);
+        ReentrantLock lock = lockManager.getAlreadyPresentLock(listName);
 
         if(lock == null) return null;
 
@@ -173,5 +173,10 @@ public class ListValueStore implements IListValueStore {
         finally {
             lock.unlock();
         }
+    }
+
+    @Override
+    public String type(String key) {
+        return store.get(key) != null ? "list" : null;
     }
 }
