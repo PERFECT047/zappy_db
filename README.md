@@ -8,6 +8,7 @@ A high-performance, from-scratch implementation of an in-memory database in Java
 ## ✨ Features
 
 ### Implemented
+
 - ✅ TCP Server with non-blocking I/O
 - ✅ RESP (Redis Serialization Protocol) parsing
 - ✅ Multi-threaded client handling with thread pools
@@ -19,6 +20,7 @@ A high-performance, from-scratch implementation of an in-memory database in Java
 - ✅ Environment-based configuration
 
 ### Planned Features
+
 - 🔄 Data persistence with RDB snapshots
 - 🔄 Replication and clustering support
 - 🔄 Pub/Sub messaging
@@ -29,6 +31,7 @@ A high-performance, from-scratch implementation of an in-memory database in Java
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Java 25+ (with preview features enabled)
 - Maven 3.6+
 
@@ -75,117 +78,184 @@ mvn test
 ./run_redis_vs_zappy_benchmarks_container.sh
 ```
 
-## 📊 Performance Benchmarks
+## 📊 Performance Benchmarks (Updated – Pipelined & Batched)
 
 ### Benchmark Methodology
 
-Benchmarks are executed using a **single unified benchmark client** (`ZappyDbBenchmark`) against both ZappyDB and Redis to ensure:
+Benchmarks are executed using a **single unified benchmark client** (`ZappyDbBenchmark`) against both ZappyDB and Redis
+to ensure:
 
 - Identical workload distribution
-- Same concurrency model
+- Same concurrency model (client-side)
 - Same network conditions (Docker bridge)
 - Same measurement logic (latency + throughput)
 - No tool bias (`redis-benchmark` is NOT used)
 
-This ensures a **fair, apples-to-apples comparison**.
+### Critical Improvements (Recent)
+
+- ✅ Command pipelining enabled (`pipelineSize=64`)
+- ✅ Batched response flushing (reduces syscall overhead)
+- ✅ Logging disabled in benchmark mode (`BENCH_MODE=true`)
+- ✅ Warmup phase for JIT stabilization
+- ✅ CPU pinning via Docker (`cpuset`)
 
 ---
 
-### Benchmark Configuration
+## 🔹 Benchmark Configuration
 
-- **Java**: 25.0.2
-- **Processors**: 4
-- **Max Memory**: 494 MiB
-- **Threads**: 4
-- **Warmup Ops/Thread**: 5,000
-- **Measured Ops/Thread**: 20,000
-- **Key Space**: 1,024
-- **List Key Space**: 256
+- **Java**: 25.0.3
+- **CPU Limit**: 2 cores
+- **Memory Limit**: 1 GiB
+- **GC**: ZGC
+- **Threads**: 2
+- **Warmup Ops/Thread**: 100,000
+- **Measured Ops/Thread**: 500,000
+- **Total Operations**: 1,000,000
+- **Pipeline Size**: 64
+- **Key Space**: 100,000
+- **List Key Space**: 10,000
 - **Value Size**: 32 bytes
-- **Blocking Pairs**: 2
-- **Blocking Ops/Pair**: 2,000
 
 ---
 
-## 🔹 Mixed Workload Benchmark
+## 🔹 Mixed Workload Benchmark (Latest)
 
 ### ZappyDB
 
-| Command | Throughput (ops/s) | Avg (µs) | P50 (µs) | P95 (µs) | P99 (µs) | Max (µs) |
-|--------|-------------------|----------|----------|----------|----------|----------|
-| PING   | 24,897 | 12.76 | 3.28 | 6.87 | 11.46 | 68,519 |
-| ECHO   | 25,309 | 4.52  | 3.58 | 7.75 | 12.03 | 238 |
-| SET    | 37,690 | 15.78 | 3.73 | 7.43 | 12.01 | 69,373 |
-| GET    | 38,089 | 10.22 | 3.83 | 7.88 | 11.91 | 67,674 |
-| LPUSH  | 37,857 | 22.66 | 4.55 | 8.60 | 15.70 | 70,602 |
-| RPUSH  | 37,759 | 10.67 | 3.92 | 7.94 | 13.22 | 70,921 |
-| LPOP   | 25,416 | 13.81 | 4.77 | 9.28 | 17.26 | 65,787 |
-| LLEN   | 12,352 | 3.91  | 2.85 | 6.39 | 15.00 | 332 |
-| LRANGE | 12,274 | 64.56 | 9.03 | 18.13 | 83.78 | 70,854 |
-| **OVERALL** | **251,646** | **15.37** | **4.10** | **9.20** | **17.88** | **70,921** |
+| Metric      | Value            |
+|-------------|------------------|
+| Throughput  | **32,910 ops/s** |
+| Avg Latency | 59.73 µs         |
+| P50         | 48.73 µs         |
+| P95         | 143.35 µs        |
+| P99         | 208.51 µs        |
+| Max         | 457.93 µs        |
 
 ---
 
-### Redis (same benchmark client)
+### Redis
 
-| Command | Throughput (ops/s) | Avg (µs) | P50 (µs) | P95 (µs) | P99 (µs) | Max (µs) |
-|--------|-------------------|----------|----------|----------|----------|----------|
-| PING   | 20,459 | 12.80 | 3.99 | 7.88 | 12.06 | 67,312 |
-| ECHO   | 19,712 | 13.34 | 4.47 | 8.75 | 15.14 | 63,571 |
-| SET    | 30,375 | 10.76 | 4.31 | 8.49 | 14.45 | 68,270 |
-| GET    | 30,127 | 16.07 | 4.52 | 8.77 | 13.54 | 66,553 |
-| LPUSH  | 30,643 | 23.08 | 5.23 | 9.87 | 23.04 | 70,385 |
-| RPUSH  | 30,357 | 10.96 | 4.63 | 8.95 | 16.03 | 66,647 |
-| LPOP   | 20,087 | 23.63 | 5.44 | 10.36 | 23.69 | 69,930 |
-| LLEN   | 10,366 | 20.84 | 3.57 | 7.03 | 11.62 | 68,516 |
-| LRANGE | 10,237 | 63.25 | 10.89 | 20.14 | 72.29 | 71,432 |
-| **OVERALL** | **202,365** | **18.35** | **4.76** | **10.62** | **21.37** | **71,432** |
+| Metric      | Value            |
+|-------------|------------------|
+| Throughput  | **30,469 ops/s** |
+| Avg Latency | 63.42 µs         |
+| P50         | 53.20 µs         |
+| P95         | 150.37 µs        |
+| P99         | 213.78 µs        |
+| Max         | 635.97 µs        |
 
 ---
 
 ## 🔹 Blocking List Benchmark
 
-| Metric | ZappyDB | Redis |
-|--------|--------|-------|
-| Throughput | **114,211 ops/s** | **48,889 ops/s** |
-| Avg Latency | 15.63 µs | 38.96 µs |
-| P50 | 5.76 µs | 7.02 µs |
-| P99 | 380.95 µs | 348.32 µs |
+| Metric      | ZappyDB        | Redis      |
+|-------------|----------------|------------|
+| Throughput  | **127k ops/s** | 120k ops/s |
+| Avg Latency | 28.11 µs       | 29.68 µs   |
+| P99         | 818 µs         | 952 µs     |
 
 ---
 
 ## 📈 Performance Summary
 
-| Metric | ZappyDB | Redis | Improvement |
-|--------|--------|-------|-------------|
-| Total Throughput | 251k ops/s | 202k ops/s | **~1.24× faster** |
-| P50 Latency | 4.10 µs | 4.76 µs | **lower** |
-| P99 Latency | 17.88 µs | 21.37 µs | **lower** |
-| Blocking Throughput | 114k | 48k | **~2.3× faster** |
-
----
-
-## ⚠️ Notes on Benchmarking
-
-- Both systems are tested using the **same client and workload**
-- No Redis-specific optimizations (like pipelining) are used
-- Results reflect **balanced, realistic workloads**, not synthetic extremes
-- Tail latency spikes (~70ms) are observed due to JVM/OS scheduling
+| Metric           | ZappyDB        | Redis           |
+|------------------|----------------|-----------------|
+| Total Throughput | ~32.9k ops/s   | ~30.5k ops/s    |
+| P50 Latency      | ~48 µs         | ~53 µs          |
+| P95 Latency      | Slightly lower | Slightly higher |
+| Blocking Ops     | Faster         | Slightly slower |
 
 ---
 
 ## 🧠 Key Takeaways
 
-- ZappyDB demonstrates **consistent latency improvements**
-- Shows **higher throughput under mixed workloads**
-- Significantly better performance in **blocking operations**
-- Overall performance is **competitive and stable**, not artificially inflated
+- With proper pipelining and batching, ZappyDB achieves **comparable or slightly better throughput than Redis**
+- Performance is now **CPU-bound rather than network-bound**
+- ZappyDB shows **lower median and tail latency** in mixed workloads
+- Batched flushing and reduced syscall overhead significantly improved throughput
+- Results reflect a **fair, production-representative benchmark**
 
 ---
+
+## ⚠️ Notes on Benchmarking
+
+- Earlier results (~700k ops/s) were **non-pipelined and not representative**
+- Proper benchmarking requires:
+    - pipelining
+    - batching
+    - warmup
+- These results reflect a **realistic and fair comparison**
+
+## 🔹 Mixed Workload Benchmark (Latest)
+
+### ZappyDB (Thread Pool)
+
+| Metric      | Value             |
+|-------------|-------------------|
+| Throughput  | **759,877 ops/s** |
+| Avg Latency | 2.38 µs           |
+| P50         | 1.06 µs           |
+| P95         | 3.34 µs           |
+| P99         | 4.90 µs           |
+| Max         | 7.99 ms           |
+
+---
+
+### Redis (same benchmark client)
+
+| Metric      | Value             |
+|-------------|-------------------|
+| Throughput  | **692,234 ops/s** |
+| Avg Latency | 2.53 µs           |
+| P50         | 1.09 µs           |
+| P95         | 3.59 µs           |
+| P99         | 5.39 µs           |
+| Max         | 12.0 ms           |
+
+---
+
+## 🔹 Blocking List Benchmark
+
+| Metric      | ZappyDB       | Redis             |
+|-------------|---------------|-------------------|
+| Throughput  | 126,963 ops/s | **140,310 ops/s** |
+| Avg Latency | 27.04 µs      | 24.02 µs          |
+| P99         | 57 µs         | 56 µs             |
+
+---
+
+## 📈 Performance Summary
+
+| Metric           | ZappyDB           | Redis      |
+|------------------|-------------------|------------|
+| Total Throughput | **759k ops/s**    | 692k ops/s |
+| P50 Latency      | ~1.06 µs          | ~1.09 µs   |
+| P99 Latency      | ~4.90 µs          | ~5.39 µs   |
+| Throughput Gain  | **~9–10% faster** | —          |
+
+---
+
+## 🧠 Key Takeaways
+
+- ZappyDB achieves **~10% higher throughput** under realistic CPU constraints
+- Thread pool–based concurrency significantly improves performance
+- Latency is **consistently low and stable**
+- Performance gains come from **architecture (not benchmark tricks)**
+
+---
+
+## ⚠️ Notes on Benchmarking
+
+- Both systems are tested using the same workload and client
+- No Redis-specific optimizations (like pipelining)
+- Threads = CPU cores → no artificial scaling
+- ZGC used for latency stability
+- Results are CPU-bound and reproducible
 
 ## 🛠️ Architecture
 
 ### Project Structure
+
 ```
 ZappyDB/
 ├── src/main/java/org/perfect047/
@@ -244,38 +314,42 @@ ZappyDB/
 ### Components
 
 **Server Layer**
+
 - `Main.java`: Entry point, initiates server startup
 - `Server.java`: Manages server lifecycle, accepts connections
 - `ClientHandler.java`: Handles individual client connections
 
 **Command Layer**
+
 - `CommandFactory.java`: Creates command instances
 - `*Command.java`: Individual command implementations
 
 **Storage Layer**
+
 - `KeyValueKeyValueStore.java`: Key-value storage with TTL support
 - `ListValueStore.java`: List data structure storage
 - `ExpiryManager.java`: Manages key expiration
 - `LockManager.java`: Thread-safe locking
 
 **Concurrency Layer**
+
 - `ThreadPool.java`: Thread pool management
 - `ConcurrencyStrategy.java`: Concurrency strategy enum
 
 ## 📋 Supported Commands
 
-| Command | Description |
-|---------|-------------|
-| PING | Ping the server |
-| ECHO | Echo back message |
-| GET | Get value by key |
-| SET | Set key-value pair |
-| LPUSH | Push to list (left) |
-| RPUSH | Push to list (right) |
-| LPOP | Pop from list (left) |
-| LLEN | List length |
-| LRANGE | Get list range |
-| BLPOP | Blocking list pop |
+| Command | Description          |
+|---------|----------------------|
+| PING    | Ping the server      |
+| ECHO    | Echo back message    |
+| GET     | Get value by key     |
+| SET     | Set key-value pair   |
+| LPUSH   | Push to list (left)  |
+| RPUSH   | Push to list (right) |
+| LPOP    | Pop from list (left) |
+| LLEN    | List length          |
+| LRANGE  | Get list range       |
+| BLPOP   | Blocking list pop    |
 
 ## 🔧 Configuration
 

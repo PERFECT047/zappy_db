@@ -23,8 +23,7 @@ public class KeyValueStore implements IKeyValueStore {
             store.put(key, value);
             expiryManager.setExpiry(key, millis);
             return true;
-        }
-        finally {
+        } finally {
             lock.writeLock().unlock();
         }
     }
@@ -39,7 +38,7 @@ public class KeyValueStore implements IKeyValueStore {
 
         lock.readLock().lock();
         try {
-            if(expiryManager.isExpired(key)){
+            if (expiryManager.isExpired(key)) {
                 handleExpiredKey(key);
                 return null;
             }
@@ -52,6 +51,7 @@ public class KeyValueStore implements IKeyValueStore {
 
     /**
      * Handles cleanup when a key has expired.
+     *
      * @param key The expired key to remove
      */
     private void handleExpiredKey(String key) {
@@ -59,7 +59,7 @@ public class KeyValueStore implements IKeyValueStore {
         ReentrantReadWriteLock lock = lockManager.getLock(key);
         lock.readLock().unlock();
         lock.writeLock().lock();
-        
+
         try {
             store.remove(key);
             expiryManager.removeExpiry(key);

@@ -14,8 +14,8 @@ ZAPPY_CONTAINER="${ZAPPY_CONTAINER:-zappydb-server}"
 REDIS_CONTAINER="${REDIS_CONTAINER:-redis-server}"
 
 CPU_LIMIT="${CPU_LIMIT:-2}"
-MEMORY_LIMIT="${MEMORY_LIMIT:-1g}"
-CPUSET="${CPUSET:-}"
+MEMORY_LIMIT="${MEMORY_LIMIT:-2g}"
+CPUSET="${CPUSET:-0-1}"
 
 ENV_FILE="${ENV_FILE:-benchmark.env}"
 
@@ -95,7 +95,14 @@ docker network create "$NETWORK_NAME" >/dev/null 2>&1 || true
 # -----------------------------
 echo "Starting ZappyDB..."
 docker rm -f "$ZAPPY_CONTAINER" >/dev/null 2>&1 || true
-docker_run_common "$ZAPPY_CONTAINER" "$ZAPPY_IMAGE" \
+docker run -d \
+  --name "$ZAPPY_CONTAINER" \
+  --network "$NETWORK_NAME" \
+  --cpus="$CPU_LIMIT" \
+  --memory="$MEMORY_LIMIT" \
+  ${CPUSET:+--cpuset-cpus="$CPUSET"} \
+  -e BENCH_MODE=true \
+  "$ZAPPY_IMAGE" \
   java -cp target/classes org.perfect047.Main
 
 # -----------------------------
@@ -124,8 +131,9 @@ docker run --rm \
   --env-file "$ENV_FILE" \
   -e BENCH_HOST="$ZAPPY_CONTAINER" \
   -e BENCH_PORT=6379 \
-  -e BENCH_REQUESTS=20000 \
+  -e BENCH_REQUESTS=100000 \
   -e BENCH_CONCURRENCY=20 \
+  -e BENCH_PIPELINE=64 \
   "$BENCH_IMAGE" >/dev/null 2>&1
 
 docker run --rm \
@@ -136,8 +144,9 @@ docker run --rm \
   --env-file "$ENV_FILE" \
   -e BENCH_HOST="$REDIS_CONTAINER" \
   -e BENCH_PORT=6379 \
-  -e BENCH_REQUESTS=20000 \
+  -e BENCH_REQUESTS=100000 \
   -e BENCH_CONCURRENCY=20 \
+  -e BENCH_PIPELINE=64 \
   "$BENCH_IMAGE" >/dev/null 2>&1
 
 # -----------------------------
@@ -156,12 +165,16 @@ docker run --rm \
   --env-file "$ENV_FILE" \
   -e BENCH_HOST="$ZAPPY_CONTAINER" \
   -e BENCH_PORT=6379 \
+  -e BENCH_PIPELINE=64 \
   "$BENCH_IMAGE"
 
 echo ""
 echo "======================================"
 echo "=== Redis Benchmark (Unified) ========"
 echo "======================================"
+
+docker rm -f "$ZAPPY_CONTAINER" >/dev/null 2>&1 || true
+sleep 2
 
 docker run --rm \
   --network "$NETWORK_NAME" \
@@ -171,4 +184,5 @@ docker run --rm \
   --env-file "$ENV_FILE" \
   -e BENCH_HOST="$REDIS_CONTAINER" \
   -e BENCH_PORT=6379 \
+  -e BENCH_PIPELINE=64 \
   "$BENCH_IMAGE"

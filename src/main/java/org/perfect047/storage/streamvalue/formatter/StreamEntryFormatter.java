@@ -6,7 +6,8 @@ import java.util.Map;
 
 public final class StreamEntryFormatter {
 
-    private StreamEntryFormatter() {}
+    private StreamEntryFormatter() {
+    }
 
     public static List<Object> format(Map<String, String> entry) {
 

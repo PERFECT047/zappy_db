@@ -5,7 +5,6 @@ import org.perfect047.storage.listvalue.IListValueStore;
 import org.perfect047.storage.listvalue.ListValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,13 +20,12 @@ public class LPopCommandTest {
         // Setup list
         listValueStore.leftAdd(listName, List.of("value1", "value2"));
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        LPopCommand lPopCommand = new LPopCommand(outputStream, listValueStore);
+        LPopCommand lPopCommand = new LPopCommand(listValueStore);
 
-        lPopCommand.execute(List.of("LPOP", listName));
+        String output = lPopCommand.execute(List.of("LPOP", listName));
 
         String expected = RespString.getRespBulkString(List.of("value2")); // left pop removes from left
-        assertEquals(expected, outputStream.toString());
+        assertEquals(expected, output);
 
         // Verify remaining
         List<String> remaining = listValueStore.get(listName, 0, -1);
@@ -39,12 +37,11 @@ public class LPopCommandTest {
         String listName = "empty_list_" + UUID.randomUUID();
         IListValueStore listValueStore = new ListValueStore();
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        LPopCommand lPopCommand = new LPopCommand(outputStream, listValueStore);
+        LPopCommand lPopCommand = new LPopCommand(listValueStore);
 
-        lPopCommand.execute(List.of("LPOP", listName));
+        String output = lPopCommand.execute(List.of("LPOP", listName));
 
         String expected = RespString.getRespBulkString(null); // null returns empty
-        assertEquals(expected, outputStream.toString());
+        assertEquals(expected, output);
     }
 }

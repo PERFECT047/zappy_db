@@ -2,18 +2,14 @@ package org.perfect047.command;
 
 import org.perfect047.storage.streamvalue.IStreamValueStore;
 
-import java.io.OutputStream;
-
-public class StreamValueCommand extends BaseCommand{
+public class StreamValueCommand {
 
     protected final IStreamValueStore streamValueStore;
 
     /**
-     * @param outputStream stream bound to the current client connection
      * @param streamValueStore store used by stream commands
      */
-    protected StreamValueCommand(OutputStream outputStream, IStreamValueStore streamValueStore) {
-        super(outputStream);
+    protected StreamValueCommand(IStreamValueStore streamValueStore) {
         this.streamValueStore = streamValueStore;
     }
 

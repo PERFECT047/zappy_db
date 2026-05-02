@@ -5,7 +5,6 @@ import org.perfect047.storage.listvalue.IListValueStore;
 import org.perfect047.storage.listvalue.ListValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,13 +20,12 @@ public class LLenCommandTest {
         // Setup list
         listValueStore.leftAdd(listName, List.of("value1", "value2"));
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        LLenCommand lLenCommand = new LLenCommand(outputStream, listValueStore);
+        LLenCommand lLenCommand = new LLenCommand(listValueStore);
 
-        lLenCommand.execute(List.of("LLEN", listName));
+        String output = lLenCommand.execute(List.of("LLEN", listName));
 
         String expected = RespString.getRespIntegerString(2);
-        assertEquals(expected, outputStream.toString());
+        assertEquals(expected, output);
     }
 
     @Test
@@ -35,12 +33,11 @@ public class LLenCommandTest {
         String listName = "empty_list_" + UUID.randomUUID();
         IListValueStore listValueStore = new ListValueStore();
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        LLenCommand lLenCommand = new LLenCommand(outputStream, listValueStore);
+        LLenCommand lLenCommand = new LLenCommand(listValueStore);
 
-        lLenCommand.execute(List.of("LLEN", listName));
+        String output = lLenCommand.execute(List.of("LLEN", listName));
 
         String expected = RespString.getRespIntegerString(0);
-        assertEquals(expected, outputStream.toString());
+        assertEquals(expected, output);
     }
 }

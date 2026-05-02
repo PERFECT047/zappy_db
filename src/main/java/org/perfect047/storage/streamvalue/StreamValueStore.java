@@ -2,9 +2,9 @@ package org.perfect047.storage.streamvalue;
 
 import org.perfect047.storage.streamvalue.cursor.IdCursor;
 import org.perfect047.storage.streamvalue.entry.StreamEntryBuilder;
+import org.perfect047.storage.streamvalue.formatter.StreamEntryFormatter;
 import org.perfect047.storage.streamvalue.idgenerator.IStreamIdGenerator;
 import org.perfect047.storage.streamvalue.idgenerator.StreamIdGeneratorFactory;
-import org.perfect047.storage.streamvalue.formatter.StreamEntryFormatter;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.logging.Logger;
 
-public class StreamValueStore implements IStreamValueStore{
+public class StreamValueStore implements IStreamValueStore {
 
     private static final Logger LOGGER = Logger.getLogger(StreamValueStore.class.getName());
     private final ConcurrentMap<String, ConcurrentSkipListMap<Long, Deque<Map<String, String>>>> store = new ConcurrentHashMap<>();

@@ -13,7 +13,8 @@ public class ExpiryManager {
 
     /**
      * Sets the expiry time for a key.
-     * @param key The key to set expiry for
+     *
+     * @param key    The key to set expiry for
      * @param millis Milliseconds from now when the key should expire
      */
     public void setExpiry(String key, Long millis) {
@@ -27,6 +28,7 @@ public class ExpiryManager {
 
     /**
      * Checks if a key has expired.
+     *
      * @param key The key to check
      * @return true if the key has expired, false otherwise
      */
@@ -40,6 +42,7 @@ public class ExpiryManager {
 
     /**
      * Removes the expiry time for a key.
+     *
      * @param key The key to remove expiry for
      */
     public void removeExpiry(String key) {
