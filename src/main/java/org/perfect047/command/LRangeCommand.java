@@ -11,20 +11,22 @@ public class LRangeCommand extends ListValueCommand implements ICommand {
 
     private static final Logger LOGGER = Logger.getLogger(LRangeCommand.class.getName());
 
-    public LRangeCommand(OutputStream outputStream, IListValueStore listValueStore) {
-        super(outputStream, listValueStore);
+    public LRangeCommand(IListValueStore listValueStore) {
+        super(listValueStore);
     }
 
     @Override
-    public void execute(List<String> args) throws Exception {
+    public String execute(List<String> args) throws Exception {
         if (args.size() < 4) {
             throw new IllegalArgumentException("LRANGE command requires list name, start index, and end index");
         }
+
         LOGGER.fine("LRANGE command args: " + args);
+
         String listName = args.get(1);
         Integer startIndex = Integer.parseInt(args.get(2));
         Integer endIndex = Integer.parseInt(args.get(3));
 
-        getOutputStream().write(RespString.getRespArrayString(listValueStore.get(listName, startIndex, endIndex)).getBytes());
+        return RespString.getRespArrayString(listValueStore.get(listName, startIndex, endIndex));
     }
 }

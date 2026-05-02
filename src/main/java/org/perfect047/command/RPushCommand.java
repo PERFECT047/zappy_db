@@ -8,16 +8,17 @@ import java.util.List;
 
 public class RPushCommand extends ListValueCommand implements ICommand{
 
-    public RPushCommand(OutputStream outputStream, IListValueStore listValueStore) {
-        super(outputStream, listValueStore);
+    public RPushCommand(IListValueStore listValueStore) {
+        super(listValueStore);
     }
 
     @Override
-    public void execute(List<String> args) throws Exception {
+    public String execute(List<String> args) throws Exception {
         if (args.size() < 3) {
             throw new IllegalArgumentException("RPUSH command requires list name and values");
         }
         Integer size = listValueStore.rightAdd(args.get(1), args.subList(2, args.size()));
-        getOutputStream().write(RespString.getRespIntegerString(size).getBytes());
+
+        return RespString.getRespIntegerString(size);
     }
 }

@@ -8,12 +8,12 @@ import java.util.List;
 
 public class SetCommand extends KeyValueCommand implements ICommand{
 
-    public SetCommand(OutputStream outputStream, IKeyValueStore keyValueStore) {
-        super(outputStream, keyValueStore);
+    public SetCommand(IKeyValueStore keyValueStore) {
+        super(keyValueStore);
     }
 
     @Override
-    public void execute(List<String> args) throws Exception {
+    public String execute(List<String> args) throws Exception {
         if (args.size() < 3) {
             throw new IllegalArgumentException("SET command requires key and value");
         }
@@ -24,7 +24,8 @@ public class SetCommand extends KeyValueCommand implements ICommand{
         }
 
         keyValueStore.set(args.get(1), args.get(2), millis);
-        this.getOutputStream().write(RespString.getRespSimpleString(List.of("OK")).getBytes());
+
+        return RespString.getRespSimpleString(List.of("OK"));
     }
 
     private Long getExpiry(String arg, String value){

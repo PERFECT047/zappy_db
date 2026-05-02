@@ -10,12 +10,12 @@ import java.util.List;
 
 public class TypeCommand extends StoresCommand implements ICommand{
 
-    public TypeCommand(OutputStream outputStream, IStreamValueStore streamValueStore, IKeyValueStore keyValueStore, IListValueStore listValueStore) {
-        super(outputStream, streamValueStore,keyValueStore,listValueStore);
+    public TypeCommand(IStreamValueStore streamValueStore, IKeyValueStore keyValueStore, IListValueStore listValueStore) {
+        super(streamValueStore,keyValueStore,listValueStore);
     }
 
     @Override
-    public void execute(List<String> args) throws Exception {
+    public String execute(List<String> args) throws Exception {
 
         if (args.size() < 2) {
             throw new IllegalArgumentException("TYPE requires key");
@@ -25,9 +25,7 @@ public class TypeCommand extends StoresCommand implements ICommand{
 
         String type = resolveType(key);
 
-        getOutputStream().write(
-                RespString.getRespSimpleString(List.of(type)).getBytes()
-        );
+        return RespString.getRespSimpleString(List.of(type));
     }
 
     /**

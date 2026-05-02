@@ -8,12 +8,12 @@ import java.util.List;
 
 public class BLPopCommand extends ListValueCommand implements ICommand{
 
-    public BLPopCommand(OutputStream outputStream, IListValueStore listValueStore) {
-        super(outputStream, listValueStore);
+    public BLPopCommand(IListValueStore listValueStore) {
+        super(listValueStore);
     }
 
     @Override
-    public void execute(List<String> args) throws Exception {
+    public String execute(List<String> args) throws Exception {
         if (args.size() < 2) {
             throw new IllegalArgumentException("BLPOP command requires a list name");
         }
@@ -22,6 +22,6 @@ public class BLPopCommand extends ListValueCommand implements ICommand{
 
         if(args.size()>2) seconds = Float.parseFloat(args.get(2));
 
-        getOutputStream().write(RespString.getRespArrayString(listValueStore.blockingLeftPop(listName, seconds)).getBytes());
+        return RespString.getRespArrayString(listValueStore.blockingLeftPop(listName, seconds));
     }
 }

@@ -8,12 +8,12 @@ import java.util.List;
 
 public class LPopCommand extends ListValueCommand implements ICommand{
 
-    public LPopCommand(OutputStream outputStream, IListValueStore listValueStore) {
-        super(outputStream, listValueStore);
+    public LPopCommand(IListValueStore listValueStore) {
+        super(listValueStore);
     }
 
     @Override
-    public void execute(List<String> args) throws Exception {
+    public String execute(List<String> args) throws Exception {
         if (args.size() < 2) {
             throw new IllegalArgumentException("LPOP command requires a list name");
         }
@@ -26,10 +26,8 @@ public class LPopCommand extends ListValueCommand implements ICommand{
 
         List<String> result = listValueStore.leftPop(listName, repetitions);
 
-        getOutputStream().write(
-                ((result == null) || (result.size() <= 1)) ?
-                    RespString.getRespBulkString(result).getBytes() :
-                    RespString.getRespArrayString(result).getBytes()
-        );
+        return ((result == null) || (result.size() <= 1)) ?
+                    RespString.getRespBulkString(result) :
+                    RespString.getRespArrayString(result);
     }
 }

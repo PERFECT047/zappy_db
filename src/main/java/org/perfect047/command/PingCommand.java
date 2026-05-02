@@ -15,10 +15,14 @@ public class PingCommand extends BaseCommand implements ICommand{
     }
 
     @Override
-    public void execute(List<String> args) throws Exception {
+    public String execute(List<String> args) throws Exception {
+
         LOGGER.fine("Executing PING command");
+
         String writeOut = RespString.getRespSimpleString(List.of("PONG"));
+
         LOGGER.fine("PING response: " + writeOut);
-        this.getOutputStream().write(writeOut.getBytes());
+
+        return writeOut;
     }
 }

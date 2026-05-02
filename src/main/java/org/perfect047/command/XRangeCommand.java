@@ -8,12 +8,12 @@ import java.util.List;
 
 public class XRangeCommand extends StreamValueCommand implements ICommand{
 
-    public XRangeCommand(OutputStream outputStream, IStreamValueStore streamValueStore){
-        super(outputStream, streamValueStore);
+    public XRangeCommand(IStreamValueStore streamValueStore){
+        super(streamValueStore);
     }
 
     @Override
-    public void execute(List<String> args) throws Exception {
+    public String execute(List<String> args) throws Exception {
 
         if (args.size() < 4) {
             throw new IllegalArgumentException(
@@ -28,13 +28,9 @@ public class XRangeCommand extends StreamValueCommand implements ICommand{
         List<Object> result = streamValueStore.range(streamName, start, end);
 
         if (result == null || result.isEmpty()) {
-            getOutputStream().write(
-                    RespString.getRespArrayString(List.of()).getBytes()
-            );
+            return RespString.getRespArrayString(List.of());
         } else {
-            getOutputStream().write(
-                    RespString.getRespArrayString(result).getBytes()
-            );
+            return RespString.getRespArrayString(result);
         }
     }
 
