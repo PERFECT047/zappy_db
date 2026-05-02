@@ -26,14 +26,13 @@ public class ListValueStore implements IListValueStore {
 
         lock.lock();
 
-        try{
+        try {
             List<String> keyStore = store.computeIfAbsent(listName, k -> new ArrayList<>());
             keyStore.addAll(0, reversed);
 
             condition.signal();
             return keyStore.size();
-        }
-        finally {
+        } finally {
             lock.unlock();
         }
 
@@ -46,14 +45,13 @@ public class ListValueStore implements IListValueStore {
 
         lock.lock();
 
-        try{
+        try {
             List<String> keyStore = store.computeIfAbsent(listName, k -> new ArrayList<>());
             keyStore.addAll(values);
 
             condition.signal();
             return keyStore.size();
-        }
-        finally {
+        } finally {
             lock.unlock();
         }
 
@@ -63,11 +61,11 @@ public class ListValueStore implements IListValueStore {
     public List<String> leftPop(String listName, Integer repetitions) {
         ReentrantLock lock = lockManager.getAlreadyPresentLock(listName);
 
-        if(lock == null) return null;
+        if (lock == null) return null;
 
         lock.lock();
 
-        try{
+        try {
             List<String> list = store.get(listName);
 
             if (list == null || list.isEmpty()) return null;
@@ -78,8 +76,7 @@ public class ListValueStore implements IListValueStore {
             list.subList(0, n).clear();
 
             return removed;
-        }
-        finally {
+        } finally {
             lock.unlock();
         }
 
@@ -94,26 +91,24 @@ public class ListValueStore implements IListValueStore {
 
         lock.lock();
 
-        try{
-            while(true){
-                List<String> keyStore = store.computeIfAbsent(listName,  k -> new ArrayList<>());
+        try {
+            while (true) {
+                List<String> keyStore = store.computeIfAbsent(listName, k -> new ArrayList<>());
 
-                if(!keyStore.isEmpty()) {
+                if (!keyStore.isEmpty()) {
                     String value = keyStore.remove(0);
 
                     return List.of(value);
                 }
 
-                if(seconds == 0){
+                if (seconds == 0) {
                     condition.await();
-                }
-                else{
-                    if(nanos <= 0) return null;
+                } else {
+                    if (nanos <= 0) return null;
                     nanos = condition.awaitNanos(nanos);
                 }
             }
-        }
-        finally {
+        } finally {
             lock.unlock();
         }
     }
@@ -122,14 +117,14 @@ public class ListValueStore implements IListValueStore {
     public List<String> get(String listName, Integer startIndex, Integer endIndex) {
         ReentrantLock lock = lockManager.getAlreadyPresentLock(listName);
 
-        if(lock == null) return List.of();
+        if (lock == null) return List.of();
 
         lock.lock();
 
-        try{
+        try {
             List<String> keyStore = store.get(listName);
 
-            if(keyStore == null || keyStore.isEmpty()) return List.of();
+            if (keyStore == null || keyStore.isEmpty()) return List.of();
 
             int iniSize = keyStore.size();
 
@@ -147,13 +142,12 @@ public class ListValueStore implements IListValueStore {
 
             //Empty Range check
 
-            if(startIndex > endIndex) return List.of();
+            if (startIndex > endIndex) return List.of();
 
             LOGGER.fine("Final indices - start: " + startIndex + ", end: " + endIndex);
 
             return new ArrayList<>(keyStore.subList(startIndex, endIndex + 1));
-        }
-        finally {
+        } finally {
             lock.unlock();
         }
     }
@@ -162,15 +156,14 @@ public class ListValueStore implements IListValueStore {
     public Integer getSize(String listName) {
         ReentrantLock lock = lockManager.getAlreadyPresentLock(listName);
 
-        if(lock == null) return null;
+        if (lock == null) return null;
 
         lock.lock();
 
-        try{
+        try {
             List<String> keyStore = store.get(listName);
             return keyStore == null ? null : keyStore.size();
-        }
-        finally {
+        } finally {
             lock.unlock();
         }
     }

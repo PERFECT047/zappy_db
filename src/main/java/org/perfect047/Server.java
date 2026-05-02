@@ -10,8 +10,6 @@ import org.perfect047.storage.listvalue.ListValueStore;
 import org.perfect047.storage.streamvalue.IStreamValueStore;
 import org.perfect047.storage.streamvalue.StreamValueStore;
 
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,69 +24,58 @@ public class Server {
     /**
      * Creates the default server with in-memory stores and configured concurrency strategy.
      */
-    public Server() {
-        this(new KeyValueStore(), new ListValueStore(), new StreamValueStore(), new ConcurrencyFactory());
+    public Server(int port) {
+        this(
+                new KeyValueStore(),
+                new ListValueStore(),
+                new StreamValueStore(),
+                new ConcurrencyFactory(),
+                port
+        );
     }
 
     /**
      * Creates a server with injected stores and concurrency factory.
      *
-     * @param keyValueStore key-value store implementation
-     * @param listValueStore list-value store implementation
+     * @param keyValueStore      key-value store implementation
+     * @param listValueStore     list-value store implementation
+     * @param streamValueStore   stream-value store implementation
      * @param concurrencyFactory factory that selects the connection handling strategy
+     * @param port               connection port mapping
      */
-    public Server(IKeyValueStore keyValueStore, IListValueStore listValueStore, IStreamValueStore streamValueStore, ConcurrencyFactory concurrencyFactory) {
-        this(new CommandFactory(keyValueStore, listValueStore, streamValueStore), concurrencyFactory);
+    public Server(IKeyValueStore keyValueStore,
+                  IListValueStore listValueStore,
+                  IStreamValueStore streamValueStore,
+                  ConcurrencyFactory concurrencyFactory,
+                  int port) {
+
+        CommandFactory commandFactory =
+                new CommandFactory(keyValueStore, listValueStore, streamValueStore);
+
+        this.concurrencyStrategy =
+                concurrencyFactory.getConcurrencyStrategy(commandFactory, port);
     }
 
     /**
-     * Creates a server with an already wired command factory.
-     *
-     * @param commandFactory command factory used by connection handlers
-     * @param concurrencyFactory factory that selects the connection handling strategy
+     * Starts the server.
      */
-    public Server(CommandFactory commandFactory, ConcurrencyFactory concurrencyFactory) {
-        this.concurrencyStrategy = concurrencyFactory.getConcurrencyStrategy(commandFactory);
-    }
-
-    /**
-     * Creates a server with a fully injected concurrency strategy.
-     *
-     * @param concurrencyStrategy strategy responsible for handling accepted sockets
-     */
-    public Server(IConcurrencyStrategy concurrencyStrategy) {
-        this.concurrencyStrategy = concurrencyStrategy;
-    }
-
-    /**
-     * Starts the TCP server and delegates accepted sockets to the configured strategy.
-     *
-     * @param port TCP port to bind
-     */
-    public void startServer(int port) {
-        ServerSocket serverSocket = null;
-        Socket clientSocket = null;
-
+    public void startServer() {
         try {
-            serverSocket = new ServerSocket(port);
-            serverSocket.setReuseAddress(true);
-            LOGGER.info("ZappyDB server started on port " + port);
-
-            while (true) {
-                clientSocket = serverSocket.accept();
-                concurrencyStrategy.handleConnection(clientSocket);
-            }
-
+            concurrencyStrategy.start();
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Server Exception: " + e.getMessage(), e);
-        }
-        finally {
-            try {
-                concurrencyStrategy.shutdown();
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Server PostProcess Exception: " + e.getMessage(), e);
-            }
+            LOGGER.log(Level.SEVERE, "Server failed to start", e);
+            shutdown();
         }
     }
 
+    /**
+     * Stops the server.
+     */
+    public void shutdown() {
+        try {
+            concurrencyStrategy.shutdown();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Shutdown error", e);
+        }
+    }
 }

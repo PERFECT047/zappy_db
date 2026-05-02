@@ -8,6 +8,8 @@ import java.util.List;
  */
 public interface IListReader {
     List<String> leftPop(String listName, Integer repetations);
+
     List<String> get(String listName, Integer startIndex, Integer endIndex);
+
     Integer getSize(String listName);
 }

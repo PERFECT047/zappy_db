@@ -14,6 +14,7 @@ public class LockManager {
 
     /**
      * Gets or creates a read-write lock for the given key.
+     *
      * @param key The key to get the lock for
      * @return The ReentrantReadWriteLock for this key
      */
@@ -23,6 +24,7 @@ public class LockManager {
 
     /**
      * Checks if a lock exists for the given key.
+     *
      * @param key The key to check
      * @return true if a lock exists, false otherwise
      */
@@ -32,6 +34,7 @@ public class LockManager {
 
     /**
      * Removes the lock for a key (should only be called when key is deleted).
+     *
      * @param key The key to remove the lock for
      */
     public void removeLock(String key) {

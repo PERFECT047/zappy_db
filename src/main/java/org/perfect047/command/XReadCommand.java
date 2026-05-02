@@ -3,18 +3,17 @@ package org.perfect047.command;
 import org.perfect047.storage.streamvalue.IStreamValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 public class XReadCommand extends StreamValueCommand implements ICommand {
 
-    public XReadCommand(OutputStream outputStream, IStreamValueStore streamValueStore) {
-        super(outputStream, streamValueStore);
+    public XReadCommand(IStreamValueStore streamValueStore) {
+        super(streamValueStore);
     }
 
     @Override
-    public void execute(List<String> args) throws Exception {
+    public String execute(List<String> args) throws Exception {
 
         if (args.size() < 4) {
             throw new IllegalArgumentException("Invalid XREAD arguments");
@@ -37,7 +36,7 @@ public class XReadCommand extends StreamValueCommand implements ICommand {
 
         List<Object> finalResult = handleStreams(args, index, blockTime);
 
-        getOutputStream().write(RespString.getRespArrayString(finalResult).getBytes());
+        return RespString.getRespArrayString(finalResult);
     }
 
     /**
@@ -49,7 +48,7 @@ public class XReadCommand extends StreamValueCommand implements ICommand {
         int n = remaining / 2;
 
         List<String> keys = args.subList(index, index + n);
-        List<String> ids  = args.subList(index + n, args.size());
+        List<String> ids = args.subList(index + n, args.size());
 
         List<Object> finalResult = new ArrayList<>();
 

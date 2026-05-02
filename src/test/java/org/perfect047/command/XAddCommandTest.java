@@ -5,7 +5,6 @@ import org.perfect047.storage.streamvalue.IStreamValueStore;
 import org.perfect047.storage.streamvalue.StreamValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,16 +17,13 @@ public class XAddCommandTest {
     public void testXAddCommand() throws Exception {
         String streamName = "test_stream_" + UUID.randomUUID();
         IStreamValueStore streamValueStore = new StreamValueStore();
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        XAddCommand xAddCommand = new XAddCommand(outputStream, streamValueStore);
+        XAddCommand xAddCommand = new XAddCommand(streamValueStore);
 
         List<String> args = List.of("XADD", streamName, "*", "field1", "value1", "field2", "value2");
-        xAddCommand.execute(args);
+        String output = xAddCommand.execute(args);
 
-        String response = outputStream.toString();
-        assertTrue(response.startsWith("$")); // Bulk string response
-        assertTrue(response.contains("-")); // ID should contain a hyphen
-        outputStream.reset();
+        assertTrue(output.startsWith("$")); // Bulk string response
+        assertTrue(output.contains("-")); // ID should contain a hyphen
 
         // Verify the entry was added
         List<Object> rangeResult = streamValueStore.range(streamName, "-", "+");
@@ -46,16 +42,14 @@ public class XAddCommandTest {
     public void testXAddCommandWithSpecificId() throws Exception {
         String streamName = "test_stream_" + UUID.randomUUID();
         IStreamValueStore streamValueStore = new StreamValueStore();
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        XAddCommand xAddCommand = new XAddCommand(outputStream, streamValueStore);
+        XAddCommand xAddCommand = new XAddCommand(streamValueStore);
 
         String specificId = "1-0";
         List<String> args = List.of("XADD", streamName, specificId, "field1", "value1");
-        xAddCommand.execute(args);
+        String output = xAddCommand.execute(args);
 
         String expected = RespString.getRespBulkString(List.of(specificId));
-        assertEquals(expected, outputStream.toString());
-        outputStream.reset();
+        assertEquals(expected, output);
 
         // Verify the entry was added
         List<Object> rangeResult = streamValueStore.range(streamName, "-", "+");
@@ -65,44 +59,59 @@ public class XAddCommandTest {
     }
 
     @Test
-    public void testXAddCommandInvalidArgumentsCount() throws Exception {
+    public void testXAddCommandInvalidArgumentsCount() {
         String streamName = "test_stream_" + UUID.randomUUID();
         IStreamValueStore streamValueStore = new StreamValueStore();
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        XAddCommand xAddCommand = new XAddCommand(outputStream, streamValueStore);
+        XAddCommand xAddCommand = new XAddCommand(streamValueStore);
 
-        List<String> args = List.of("XADD", streamName, "*"); // Missing field-value pairs
-        xAddCommand.execute(args);
+        List<String> args = List.of("XADD", streamName, "*");
 
-        String expectedError = RespString.getRespErrorString("XADD requires key, id and at least one field-value pair");
-        assertEquals(expectedError, outputStream.toString());
+        Exception ex = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> xAddCommand.execute(args)
+        );
+
+        assertEquals(
+                "XADD requires key, id and at least one field-value pair",
+                ex.getMessage()
+        );
     }
 
     @Test
-    public void testXAddCommandOddNumberOfFieldValues() throws Exception {
+    public void testXAddCommandOddNumberOfFieldValues() {
         String streamName = "test_stream_" + UUID.randomUUID();
         IStreamValueStore streamValueStore = new StreamValueStore();
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        XAddCommand xAddCommand = new XAddCommand(outputStream, streamValueStore);
+        XAddCommand xAddCommand = new XAddCommand(streamValueStore);
 
-        List<String> args = List.of("XADD", streamName, "*", "field1", "value1", "field2"); // Odd number
-        xAddCommand.execute(args);
+        List<String> args = List.of("XADD", streamName, "*", "field1", "value1", "field2");
 
-        String expectedError = RespString.getRespErrorString("XADD field-value pairs must be even");
-        assertEquals(expectedError, outputStream.toString());
+        Exception ex = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> xAddCommand.execute(args)
+        );
+
+        assertEquals(
+                "XADD field-value pairs must be even",
+                ex.getMessage()
+        );
     }
 
     @Test
-    public void testXAddCommandWithZeroId() throws Exception {
+    public void testXAddCommandWithZeroId() {
         String streamName = "test_stream_" + UUID.randomUUID();
         IStreamValueStore streamValueStore = new StreamValueStore();
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        XAddCommand xAddCommand = new XAddCommand(outputStream, streamValueStore);
+        XAddCommand xAddCommand = new XAddCommand(streamValueStore);
 
         List<String> args = List.of("XADD", streamName, "0-0", "field1", "value1");
-        xAddCommand.execute(args);
 
-        String expected = RespString.getRespErrorString("ERR The ID specified in XADD must be greater than 0-0");
-        assertEquals(expected, outputStream.toString());
+        Exception ex = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> xAddCommand.execute(args)
+        );
+
+        assertEquals(
+                "ERR The ID specified in XADD must be greater than 0-0",
+                ex.getMessage()
+        );
     }
 }

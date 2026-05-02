@@ -8,34 +8,20 @@ import org.perfect047.storage.streamvalue.IStreamValueStore;
 import org.perfect047.storage.streamvalue.StreamValueStore;
 import org.perfect047.util.EnvLoader;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.LongConsumer;
 
 public final class ZappyDbBenchmark {
 
     private ZappyDbBenchmark() {
     }
 
-    public static void main(String[] args) throws Exception {
+    static void main(String[] args) throws Exception {
         EnvLoader.load();
         BenchmarkConfig config = BenchmarkConfig.fromEnvAndArgs(args);
 
@@ -74,6 +60,7 @@ public final class ZappyDbBenchmark {
             }
 
             ready.await();
+            Thread.sleep(200);
             long startedAt = System.nanoTime();
             start.countDown();
 
@@ -97,32 +84,91 @@ public final class ZappyDbBenchmark {
             CountDownLatch start,
             ConcurrentLinkedQueue<String> failures
     ) throws Exception {
+
+        final int PIPELINE = config.pipelineSize;
         WorkerResult result = new WorkerResult();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+
+        List<List<String>> batch = new ArrayList<>(PIPELINE);
 
         try (BenchmarkSession session = environment.openSession()) {
-            for (int i = 0; i < config.warmupOpsPerThread; i++) {
-                BenchmarkOperation operation = pickOperation(ThreadLocalRandom.current().nextInt(100));
 
-                try {
-                    executeMixedOperation(session, config, workerId, i, operation);
-                } catch (Exception e) {
-                    captureFailure(failures, operation.commandName + " warmup worker " + workerId + ": " + e.getMessage());
+            // -----------------------
+            // Warmup (pipelined)
+            // -----------------------
+            for (int i = 0; i < config.warmupOpsPerThread; i++) {
+                batch.add(buildCommand(config, workerId, i, rnd));
+
+                if (batch.size() == PIPELINE) {
+                    try {
+                        session.executePipeline(batch);
+                    } catch (Exception e) {
+                        captureFailure(failures, "warmup worker " + workerId + ": " + e.getMessage());
+                    }
+                    batch.clear();
                 }
+            }
+
+            if (!batch.isEmpty()) {
+                session.executePipeline(batch);
+                batch.clear();
             }
 
             ready.countDown();
             start.await();
 
+            // -----------------------
+            // Measured phase
+            // -----------------------
             for (int i = 0; i < config.measuredOpsPerThread; i++) {
-                long startedAt = System.nanoTime();
-                BenchmarkOperation operation = pickOperation(ThreadLocalRandom.current().nextInt(100));
 
-                try {
-                    executeMixedOperation(session, config, workerId, i, operation);
-                    result.recordSuccess(operation, System.nanoTime() - startedAt);
-                } catch (Exception e) {
-                    result.recordError(operation);
-                    captureFailure(failures, operation.commandName + " worker " + workerId + ": " + e.getMessage());
+                BenchmarkOperation op = pickOperation(rnd.nextInt(100));
+                batch.add(buildCommandForOperation(config, workerId, i, op, rnd));
+
+                if (batch.size() == PIPELINE) {
+
+                    long startNs = System.nanoTime();
+
+                    List<BenchmarkResponse> responses;
+                    try {
+                        responses = session.executePipeline(batch);
+                    } catch (Exception e) {
+                        for (int j = 0; j < batch.size(); j++) {
+                            result.recordError(op);
+                        }
+                        captureFailure(failures, "pipeline worker " + workerId + ": " + e.getMessage());
+                        batch.clear();
+                        continue;
+                    }
+
+                    long elapsed = System.nanoTime() - startNs;
+                    long perOp = elapsed / batch.size();
+
+                    for (BenchmarkResponse resp : responses) {
+                        if (resp.isEmpty()) {
+                            result.recordError(op);
+                        } else {
+                            result.recordSuccess(op, perOp);
+                        }
+                    }
+
+                    batch.clear();
+                }
+            }
+
+            // flush remaining
+            if (!batch.isEmpty()) {
+                long startNs = System.nanoTime();
+                List<BenchmarkResponse> responses = session.executePipeline(batch);
+                long elapsed = System.nanoTime() - startNs;
+                long perOp = elapsed / batch.size();
+
+                for (BenchmarkResponse resp : responses) {
+                    if (resp.isEmpty()) {
+                        result.recordError(BenchmarkOperation.GET);
+                    } else {
+                        result.recordSuccess(BenchmarkOperation.GET, perOp);
+                    }
                 }
             }
         }
@@ -152,6 +198,16 @@ public final class ZappyDbBenchmark {
             case LPOP -> List.of("LPOP", listKey);
             case LLEN -> List.of("LLEN", listKey);
             case LRANGE -> List.of("LRANGE", listKey, "0", "4");
+            case TYPE -> {
+                int choice = random.nextInt(3);
+                if (choice == 0) yield List.of("TYPE", key);
+                if (choice == 1) yield List.of("TYPE", listKey);
+                yield List.of("TYPE", config.namespace + ":stream:" + random.nextInt(64));
+            }
+            case XADD ->
+                    List.of("XADD", config.namespace + ":stream:" + random.nextInt(64), "*", "field1", value, "field2", "x");
+            case XRANGE -> List.of("XRANGE", config.namespace + ":stream:" + random.nextInt(64), "-", "+");
+            case XREAD -> List.of("XREAD", "STREAMS", config.namespace + ":stream:" + random.nextInt(64), "0-0");
         };
 
         BenchmarkResponse response = session.execute(args);
@@ -339,9 +395,14 @@ public final class ZappyDbBenchmark {
         for (WorkerResult result : results) {
             for (BenchmarkOperation operation : BenchmarkOperation.values()) {
                 AggregateStats aggregateStats = aggregated.get(operation);
-                aggregateStats.latencies.addAll(result.latencies.get(operation));
+
+                LongSamples workerSamples = result.latencies.get(operation);
+
+                workerSamples.forEach(aggregateStats::addLatency);
+
                 aggregateStats.errors += result.errors.get(operation);
-                overallLatencies.addAll(result.latencies.get(operation));
+                overallLatencies.addAll(workerSamples);
+
                 totalErrors += result.errors.get(operation);
             }
         }
@@ -361,11 +422,19 @@ public final class ZappyDbBenchmark {
 
         for (BenchmarkOperation operation : BenchmarkOperation.values()) {
             AggregateStats stats = aggregated.get(operation);
-            printLatencyRow(operation.commandName, stats.latencies, stats.errors, elapsedNanos);
+            printLatencyRow(operation.commandName, stats);
         }
 
         System.out.println();
-        printLatencyRow("OVERALL", overallLatencies, totalErrors, elapsedNanos);
+
+        AggregateStats overall = new AggregateStats();
+        overall.latencies.addAll(overallLatencies);
+        overall.errors = totalErrors;
+
+        overall.totalLatencyNanos = elapsedNanos;
+
+        printLatencyRow("OVERALL", overall);
+
         printFailures(failures);
     }
 
@@ -387,7 +456,14 @@ public final class ZappyDbBenchmark {
                 elapsedNanos / 1_000_000.0
         );
         printLatencyHeader();
-        printLatencyRow("BLPOP", summary.latencies, summary.timeouts + summary.protocolErrors, elapsedNanos);
+
+        AggregateStats stats = new AggregateStats();
+
+        summary.latencies.forEach(stats::addLatency);
+        stats.errors = summary.timeouts + summary.protocolErrors;
+
+        printLatencyRow("BLPOP", stats);
+
         printFailures(failures);
     }
 
@@ -407,17 +483,22 @@ public final class ZappyDbBenchmark {
         );
     }
 
-    private static void printLatencyRow(String label, LongSamples samples, long errors, long elapsedNanos) {
+    private static void printLatencyRow(String label, AggregateStats stats) {
+        LongSamples samples = stats.latencies;
         long count = samples.size();
         long[] sorted = samples.sortedCopy();
+
+        double throughput = stats.totalLatencyNanos == 0
+                ? 0.0
+                : (count * 1_000_000_000.0) / stats.totalLatencyNanos;
 
         System.out.printf(
                 Locale.US,
                 "%-10s %10d %10d %15.2f %12.2f %12.2f %12.2f %12.2f %15.2f%n",
                 label,
                 count,
-                errors,
-                opsPerSecond(count, elapsedNanos),
+                stats.errors,
+                throughput,
                 micros(samples.averageNanos()),
                 micros(percentile(sorted, 0.50)),
                 micros(percentile(sorted, 0.95)),
@@ -447,7 +528,7 @@ public final class ZappyDbBenchmark {
 
     private static void captureFailure(ConcurrentLinkedQueue<String> failures, String failure) {
         if (failures.size() < 10) {
-            failures.add(failure);
+            failures.offer(failure);
         }
     }
 
@@ -483,15 +564,19 @@ public final class ZappyDbBenchmark {
     }
 
     private static BenchmarkOperation pickOperation(int pick) {
-        if (pick < 10) return BenchmarkOperation.PING;
-        if (pick < 20) return BenchmarkOperation.ECHO;
-        if (pick < 35) return BenchmarkOperation.SET;
-        if (pick < 50) return BenchmarkOperation.GET;
-        if (pick < 65) return BenchmarkOperation.LPUSH;
-        if (pick < 80) return BenchmarkOperation.RPUSH;
-        if (pick < 90) return BenchmarkOperation.LPOP;
-        if (pick < 95) return BenchmarkOperation.LLEN;
-        return BenchmarkOperation.LRANGE;
+        if (pick < 8) return BenchmarkOperation.PING;
+        if (pick < 16) return BenchmarkOperation.ECHO;
+        if (pick < 28) return BenchmarkOperation.SET;
+        if (pick < 40) return BenchmarkOperation.GET;
+        if (pick < 50) return BenchmarkOperation.LPUSH;
+        if (pick < 60) return BenchmarkOperation.RPUSH;
+        if (pick < 68) return BenchmarkOperation.LPOP;
+        if (pick < 74) return BenchmarkOperation.LLEN;
+        if (pick < 80) return BenchmarkOperation.LRANGE;
+        if (pick < 85) return BenchmarkOperation.TYPE;
+        if (pick < 92) return BenchmarkOperation.XADD;
+        if (pick < 97) return BenchmarkOperation.XRANGE;
+        return BenchmarkOperation.XREAD;
     }
 
     private static String argValue(Map<String, String> args, String key, String envKey, String defaultValue) {
@@ -543,6 +628,98 @@ public final class ZappyDbBenchmark {
         return parsed;
     }
 
+    private static List<String> buildCommand(
+            BenchmarkConfig config,
+            int workerId,
+            int iteration,
+            ThreadLocalRandom rnd
+    ) {
+        BenchmarkOperation op = pickOperation(rnd.nextInt(100));
+        return buildCommandForOperation(config, workerId, iteration, op, rnd);
+    }
+
+    private static List<String> buildCommandForOperation(
+            BenchmarkConfig config,
+            int workerId,
+            int iteration,
+            BenchmarkOperation operation,
+            ThreadLocalRandom rnd
+    ) {
+
+        String key = config.namespace + ":key:" + rnd.nextInt(config.keySpace);
+        String listKey = config.namespace + ":list:" + rnd.nextInt(config.listKeySpace);
+        String streamKey = config.namespace + ":stream:" + rnd.nextInt(64);
+        String value = buildValue(workerId, iteration, config.valueSize);
+
+        ArrayList<String> cmd = new ArrayList<>(6);
+
+        switch (operation) {
+            case PING -> cmd.add("PING");
+            case ECHO -> {
+                cmd.add("ECHO");
+                cmd.add(value);
+            }
+            case SET -> {
+                cmd.add("SET");
+                cmd.add(key);
+                cmd.add(value);
+            }
+            case GET -> {
+                cmd.add("GET");
+                cmd.add(key);
+            }
+            case LPUSH -> {
+                cmd.add("LPUSH");
+                cmd.add(listKey);
+                cmd.add(value);
+            }
+            case RPUSH -> {
+                cmd.add("RPUSH");
+                cmd.add(listKey);
+                cmd.add(value);
+            }
+            case LPOP -> {
+                cmd.add("LPOP");
+                cmd.add(listKey);
+            }
+            case LLEN -> {
+                cmd.add("LLEN");
+                cmd.add(listKey);
+            }
+            case LRANGE -> {
+                cmd.add("LRANGE");
+                cmd.add(listKey);
+                cmd.add("0");
+                cmd.add("4");
+            }
+            case TYPE -> {
+                cmd.add("TYPE");
+                cmd.add(key);
+            }
+            case XADD -> {
+                cmd.add("XADD");
+                cmd.add(streamKey);
+                cmd.add("*");
+                cmd.add("field1");
+                cmd.add(value);
+            }
+            case XRANGE -> {
+                cmd.add("XRANGE");
+                cmd.add(streamKey);
+                cmd.add("-");
+                cmd.add("+");
+            }
+            case XREAD -> {
+                cmd.add("XREAD");
+                cmd.add("STREAMS");
+                cmd.add(streamKey);
+                cmd.add("0-0"); // next optimization target
+            }
+        }
+
+        return cmd;
+    }
+
     private enum BenchmarkOperation {
         PING("PING"),
         ECHO("ECHO"),
@@ -552,7 +729,11 @@ public final class ZappyDbBenchmark {
         RPUSH("RPUSH"),
         LPOP("LPOP"),
         LLEN("LLEN"),
-        LRANGE("LRANGE");
+        LRANGE("LRANGE"),
+        TYPE("TYPE"),
+        XADD("XADD"),
+        XRANGE("XRANGE"),
+        XREAD("XREAD");
 
         private final String commandName;
 
@@ -566,50 +747,29 @@ public final class ZappyDbBenchmark {
         REDIS
     }
 
-    private static final class BenchmarkConfig {
-        private final BenchmarkTargetType target;
-        private final int threads;
-        private final int warmupOpsPerThread;
-        private final int measuredOpsPerThread;
-        private final int keySpace;
-        private final int listKeySpace;
-        private final int valueSize;
-        private final int blockingPairs;
-        private final int blockingOpsPerPair;
-        private final String namespace;
-        private final String redisHost;
-        private final int redisPort;
-        private final boolean redisFlush;
+    private interface BenchmarkEnvironment extends AutoCloseable {
+        void seed(BenchmarkConfig config) throws Exception;
 
-        private BenchmarkConfig(
-                BenchmarkTargetType target,
-                int threads,
-                int warmupOpsPerThread,
-                int measuredOpsPerThread,
-                int keySpace,
-                int listKeySpace,
-                int valueSize,
-                int blockingPairs,
-                int blockingOpsPerPair,
-                String namespace,
-                String redisHost,
-                int redisPort,
-                boolean redisFlush
-        ) {
-            this.target = target;
-            this.threads = threads;
-            this.warmupOpsPerThread = warmupOpsPerThread;
-            this.measuredOpsPerThread = measuredOpsPerThread;
-            this.keySpace = keySpace;
-            this.listKeySpace = listKeySpace;
-            this.valueSize = valueSize;
-            this.blockingPairs = blockingPairs;
-            this.blockingOpsPerPair = blockingOpsPerPair;
-            this.namespace = namespace;
-            this.redisHost = redisHost;
-            this.redisPort = redisPort;
-            this.redisFlush = redisFlush;
+        BenchmarkSession openSession() throws Exception;
+
+        @Override
+        default void close() throws Exception {
         }
+    }
+
+    private interface BenchmarkSession extends AutoCloseable {
+        BenchmarkResponse execute(List<String> args) throws Exception;
+
+        List<BenchmarkResponse> executePipeline(List<List<String>> commands) throws Exception;
+
+        @Override
+        void close() throws Exception;
+    }
+
+    private record BenchmarkConfig(BenchmarkTargetType target, int threads, int warmupOpsPerThread,
+                                   int measuredOpsPerThread, int keySpace, int listKeySpace, int valueSize,
+                                   int blockingPairs, int blockingOpsPerPair, String namespace, String redisHost,
+                                   int redisPort, boolean redisFlush, int pipelineSize) {
 
         private static BenchmarkConfig fromEnvAndArgs(String[] args) {
             Map<String, String> cliArgs = parseArgs(args);
@@ -626,6 +786,7 @@ public final class ZappyDbBenchmark {
             int blockingPairs = Math.max(1, argInt(cliArgs, "blocking-pairs", "BENCH_BLOCKING_PAIRS", Math.max(1, Math.min(4, threads / 2))));
             int blockingOpsPerPair = Math.max(1, argInt(cliArgs, "blocking-ops", "BENCH_BLOCKING_OPS", 2_000));
             String namespace = argValue(cliArgs, "namespace", "BENCH_NAMESPACE", "bench:" + System.currentTimeMillis());
+            int pipelineSize = Math.max(1, argInt(cliArgs, "pipeline", "BENCH_PIPELINE", 32));
             String redisHost = argValue(cliArgs, "redis-host", "BENCH_REDIS_HOST", "127.0.0.1");
             int redisPort = argInt(cliArgs, "redis-port", "BENCH_REDIS_PORT", 6379);
             boolean redisFlush = argBoolean(cliArgs, "redis-flush", "BENCH_REDIS_FLUSH", false);
@@ -643,26 +804,10 @@ public final class ZappyDbBenchmark {
                     namespace,
                     redisHost,
                     redisPort,
-                    redisFlush
+                    redisFlush,
+                    pipelineSize
             );
         }
-    }
-
-    private interface BenchmarkEnvironment extends AutoCloseable {
-        void seed(BenchmarkConfig config) throws Exception;
-
-        BenchmarkSession openSession() throws Exception;
-
-        @Override
-        default void close() throws Exception {
-        }
-    }
-
-    private interface BenchmarkSession extends AutoCloseable {
-        BenchmarkResponse execute(List<String> args) throws Exception;
-
-        @Override
-        void close() throws Exception;
     }
 
     private static final class LocalBenchmarkEnvironment implements BenchmarkEnvironment {
@@ -680,6 +825,15 @@ public final class ZappyDbBenchmark {
             for (int i = 0; i < config.listKeySpace; i++) {
                 listValueStore.rightAdd(config.namespace + ":list:" + i, List.of("seed-" + i, "seed-" + i + "-tail"));
             }
+
+            // STREAM SEED
+            for (int i = 0; i < 64; i++) {
+                String streamKey = config.namespace + ":stream:" + i;
+
+                for (int j = 0; j < 10; j++) {
+                    streamValueStore.add(streamKey, List.of("*", "field", "seed-" + j));
+                }
+            }
         }
 
         @Override
@@ -688,25 +842,31 @@ public final class ZappyDbBenchmark {
         }
     }
 
-    private static final class LocalBenchmarkSession implements BenchmarkSession {
-        private final CommandFactory commandFactory;
-        private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream(256);
-
-        private LocalBenchmarkSession(CommandFactory commandFactory) {
-            this.commandFactory = commandFactory;
-        }
+    private record LocalBenchmarkSession(CommandFactory commandFactory) implements BenchmarkSession {
 
         @Override
         public BenchmarkResponse execute(List<String> args) throws Exception {
-            outputStream.reset();
-            ICommand command = commandFactory.getCommand(args.getFirst(), outputStream);
+            ICommand command = commandFactory.getCommand(args.get(0));
 
             if (command == null) {
-                throw new IllegalStateException("No command registered for " + args.getFirst());
+                throw new IllegalStateException("No command registered for " + args.get(0));
             }
 
-            command.execute(args);
-            return BenchmarkResponse.fromRaw(outputStream.toString(StandardCharsets.UTF_8));
+            // command now returns RESP string
+            String response = command.execute(args);
+
+            return BenchmarkResponse.fromRaw(response);
+        }
+
+        @Override
+        public List<BenchmarkResponse> executePipeline(List<List<String>> commands) throws Exception {
+            List<BenchmarkResponse> responses = new ArrayList<>(commands.size());
+
+            for (List<String> cmd : commands) {
+                responses.add(execute(cmd));
+            }
+
+            return responses;
         }
 
         @Override
@@ -714,16 +874,12 @@ public final class ZappyDbBenchmark {
         }
     }
 
-    private static final class RedisBenchmarkEnvironment implements BenchmarkEnvironment {
-        private final BenchmarkConfig config;
-
-        private RedisBenchmarkEnvironment(BenchmarkConfig config) {
-            this.config = config;
-        }
+    private record RedisBenchmarkEnvironment(BenchmarkConfig config) implements BenchmarkEnvironment {
 
         @Override
         public void seed(BenchmarkConfig config) throws Exception {
             try (RedisBenchmarkSession session = new RedisBenchmarkSession(config.redisHost, config.redisPort)) {
+
                 if (config.redisFlush) {
                     session.execute(List.of("FLUSHDB"));
                 }
@@ -734,6 +890,15 @@ public final class ZappyDbBenchmark {
 
                 for (int i = 0; i < config.listKeySpace; i++) {
                     session.execute(List.of("RPUSH", config.namespace + ":list:" + i, "seed-" + i, "seed-" + i + "-tail"));
+                }
+
+                // STREAM SEED
+                for (int i = 0; i < 64; i++) {
+                    String streamKey = config.namespace + ":stream:" + i;
+
+                    for (int j = 0; j < 10; j++) {
+                        session.execute(List.of("XADD", streamKey, "*", "field", "seed-" + j));
+                    }
                 }
             }
         }
@@ -757,13 +922,28 @@ public final class ZappyDbBenchmark {
 
         @Override
         public BenchmarkResponse execute(List<String> args) throws Exception {
-            writeRespArray(args);
+            return executePipeline(List.of(args)).get(0);
+        }
+
+        @Override
+        public List<BenchmarkResponse> executePipeline(List<List<String>> commands) throws Exception {
+            // write all commands
+            for (List<String> cmd : commands) {
+                writeRespArray(cmd);
+            }
             outputStream.flush();
 
-            ByteArrayOutputStream responseBytes = new ByteArrayOutputStream(128);
-            readRespValue(responseBytes);
-            return BenchmarkResponse.fromRaw(responseBytes.toString(StandardCharsets.UTF_8));
+            List<BenchmarkResponse> responses = new ArrayList<>(commands.size());
+
+            for (int i = 0; i < commands.size(); i++) {
+                ByteArrayOutputStream responseBytes = new ByteArrayOutputStream(128);
+                readRespValue(responseBytes);
+                responses.add(BenchmarkResponse.fromRaw(responseBytes.toString(StandardCharsets.UTF_8)));
+            }
+
+            return responses;
         }
+
 
         private void writeRespArray(List<String> args) throws IOException {
             writeAscii("*" + args.size() + "\r\n");
@@ -869,12 +1049,7 @@ public final class ZappyDbBenchmark {
         }
     }
 
-    private static final class BenchmarkResponse {
-        private final String raw;
-
-        private BenchmarkResponse(String raw) {
-            this.raw = raw;
-        }
+    private record BenchmarkResponse(String raw) {
 
         private static BenchmarkResponse fromRaw(String raw) {
             return new BenchmarkResponse(raw == null ? "" : raw);
@@ -938,6 +1113,12 @@ public final class ZappyDbBenchmark {
     private static final class AggregateStats {
         private final LongSamples latencies = new LongSamples();
         private long errors;
+        private long totalLatencyNanos;
+
+        private void addLatency(long nanos) {
+            latencies.add(nanos);
+            totalLatencyNanos += nanos;
+        }
     }
 
     private static final class LongSamples {
@@ -990,6 +1171,16 @@ public final class ZappyDbBenchmark {
             }
 
             values = Arrays.copyOf(values, nextSize);
+        }
+
+        private long sum() {
+            return sum;
+        }
+
+        private void forEach(LongConsumer consumer) {
+            for (int i = 0; i < size; i++) {
+                consumer.accept(values[i]);
+            }
         }
     }
 }

@@ -13,6 +13,6 @@ WORKDIR /app
 COPY --from=build /workspace/target/classes ./target/classes
 COPY --from=build /workspace/target/test-classes ./target/test-classes
 
-ENV JAVA_TOOL_OPTIONS="-XX:ActiveProcessorCount=4 -Xms512m -Xmx512m"
+ENV JAVA_TOOL_OPTIONS="-XX:ActiveProcessorCount=2 -Xms1g -Xmx1g -XX:+UseZGC -XX:+AlwaysPreTouch"
 
 CMD ["java", "-cp", "target/classes:target/test-classes", "org.perfect047.benchmark.ZappyDbBenchmark"]
