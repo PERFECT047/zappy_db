@@ -6,7 +6,8 @@ import java.util.Map;
 
 public final class StreamEntryBuilder {
 
-    private StreamEntryBuilder() {}
+    private StreamEntryBuilder() {
+    }
 
     public static Map<String, String> build(String id, List<String> args) {
 

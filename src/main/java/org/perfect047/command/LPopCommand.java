@@ -3,10 +3,9 @@ package org.perfect047.command;
 import org.perfect047.storage.listvalue.IListValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.OutputStream;
 import java.util.List;
 
-public class LPopCommand extends ListValueCommand implements ICommand{
+public class LPopCommand extends ListValueCommand implements ICommand {
 
     public LPopCommand(IListValueStore listValueStore) {
         super(listValueStore);
@@ -27,7 +26,7 @@ public class LPopCommand extends ListValueCommand implements ICommand{
         List<String> result = listValueStore.leftPop(listName, repetitions);
 
         return ((result == null) || (result.size() <= 1)) ?
-                    RespString.getRespBulkString(result) :
-                    RespString.getRespArrayString(result);
+                RespString.getRespBulkString(result) :
+                RespString.getRespArrayString(result);
     }
 }

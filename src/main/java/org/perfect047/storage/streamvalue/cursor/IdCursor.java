@@ -25,10 +25,6 @@ public final class IdCursor {
         );
     }
 
-    public String toId() {
-        return ms + "-" + seq;
-    }
-
     public static IdCursor parseStart(String start) {
         if ("-".equals(start)) {
             return new IdCursor(Long.MIN_VALUE, 0);
@@ -46,5 +42,9 @@ public final class IdCursor {
         }
 
         return parse(end);
+    }
+
+    public String toId() {
+        return ms + "-" + seq;
     }
 }

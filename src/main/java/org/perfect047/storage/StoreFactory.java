@@ -13,7 +13,7 @@ public class StoreFactory {
     private static final IListValueStore listValueStore;
     private static final IStreamValueStore streamValueStore;
 
-    static{
+    static {
         keyValueStore = new KeyValueStore();
         listValueStore = new ListValueStore();
         streamValueStore = new StreamValueStore();
@@ -22,10 +22,12 @@ public class StoreFactory {
     public static IKeyValueStore getKeyValueStore() {
         return keyValueStore;
     }
+
     public static IListValueStore getListValueStore() {
         return listValueStore;
     }
-    public  static IStreamValueStore getStreamValueStore() {
+
+    public static IStreamValueStore getStreamValueStore() {
         return streamValueStore;
     }
 

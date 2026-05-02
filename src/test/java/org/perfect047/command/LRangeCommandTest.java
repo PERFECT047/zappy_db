@@ -5,7 +5,6 @@ import org.perfect047.storage.listvalue.IListValueStore;
 import org.perfect047.storage.listvalue.ListValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,12 +20,11 @@ public class LRangeCommandTest {
         // Setup list: [value3, value2, value1] assuming left add
         listValueStore.leftAdd(listName, List.of("value1", "value2", "value3"));
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        LRangeCommand lRangeCommand = new LRangeCommand(outputStream, listValueStore);
+        LRangeCommand lRangeCommand = new LRangeCommand(listValueStore);
 
-        lRangeCommand.execute(List.of("LRANGE", listName, "0", "1"));
+        String output = lRangeCommand.execute(List.of("LRANGE", listName, "0", "1"));
 
         String expected = RespString.getRespArrayString(List.of("value3", "value2"));
-        assertEquals(expected, outputStream.toString());
+        assertEquals(expected, output);
     }
 }

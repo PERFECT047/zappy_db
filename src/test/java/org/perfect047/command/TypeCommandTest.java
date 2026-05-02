@@ -9,7 +9,6 @@ import org.perfect047.storage.streamvalue.IStreamValueStore;
 import org.perfect047.storage.streamvalue.StreamValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,13 +27,12 @@ public class TypeCommandTest {
 
         keyValueStore.set(key, value, null);
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        TypeCommand typeCommand = new TypeCommand(outputStream, streamValueStore, keyValueStore, listValueStore);
+        TypeCommand typeCommand = new TypeCommand(streamValueStore, keyValueStore, listValueStore);
 
-        typeCommand.execute(List.of("TYPE", key));
+        String output = typeCommand.execute(List.of("TYPE", key));
 
         String expected = RespString.getRespSimpleString(List.of("string"));
-        assertEquals(expected, outputStream.toString());
+        assertEquals(expected, output);
     }
 
     @Test
@@ -46,13 +44,12 @@ public class TypeCommandTest {
 
         listValueStore.leftAdd(key, List.of("item1", "item2"));
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        TypeCommand typeCommand = new TypeCommand(outputStream, streamValueStore, keyValueStore, listValueStore);
+        TypeCommand typeCommand = new TypeCommand(streamValueStore, keyValueStore, listValueStore);
 
-        typeCommand.execute(List.of("TYPE", key));
+        String output = typeCommand.execute(List.of("TYPE", key));
 
         String expected = RespString.getRespSimpleString(List.of("list"));
-        assertEquals(expected, outputStream.toString());
+        assertEquals(expected, output);
     }
 
     @Test
@@ -64,13 +61,12 @@ public class TypeCommandTest {
 
         streamValueStore.add(key, List.of("0-1", "field1", "value1"));
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        TypeCommand typeCommand = new TypeCommand(outputStream, streamValueStore, keyValueStore, listValueStore);
+        TypeCommand typeCommand = new TypeCommand(streamValueStore, keyValueStore, listValueStore);
 
-        typeCommand.execute(List.of("TYPE", key));
+        String output = typeCommand.execute(List.of("TYPE", key));
 
         String expected = RespString.getRespSimpleString(List.of("stream"));
-        assertEquals(expected, outputStream.toString());
+        assertEquals(expected, output);
     }
 
     @Test
@@ -80,13 +76,12 @@ public class TypeCommandTest {
         IListValueStore listValueStore = new ListValueStore();
         IStreamValueStore streamValueStore = new StreamValueStore();
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        TypeCommand typeCommand = new TypeCommand(outputStream, streamValueStore, keyValueStore, listValueStore);
+        TypeCommand typeCommand = new TypeCommand(streamValueStore, keyValueStore, listValueStore);
 
-        typeCommand.execute(List.of("TYPE", key));
+        String output = typeCommand.execute(List.of("TYPE", key));
 
         String expected = RespString.getRespSimpleString(List.of("none"));
-        assertEquals(expected, outputStream.toString());
+        assertEquals(expected, output);
     }
 
     @Test
@@ -95,8 +90,7 @@ public class TypeCommandTest {
         IListValueStore listValueStore = new ListValueStore();
         IStreamValueStore streamValueStore = new StreamValueStore();
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        TypeCommand typeCommand = new TypeCommand(outputStream, streamValueStore, keyValueStore, listValueStore);
+        TypeCommand typeCommand = new TypeCommand(streamValueStore, keyValueStore, listValueStore);
 
         assertThrows(IllegalArgumentException.class, () -> {
             typeCommand.execute(List.of("TYPE"));

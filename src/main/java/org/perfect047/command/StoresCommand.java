@@ -4,9 +4,7 @@ import org.perfect047.storage.keyvalue.IKeyValueStore;
 import org.perfect047.storage.listvalue.IListValueStore;
 import org.perfect047.storage.streamvalue.IStreamValueStore;
 
-import java.io.OutputStream;
-
-public class StoresCommand{
+public class StoresCommand {
 
     protected final IStreamValueStore streamValueStore;
     protected final IListValueStore listValueStore;
@@ -14,8 +12,8 @@ public class StoresCommand{
 
     /**
      * @param streamValueStore store used by stream commands
-     * @param keyValueStore store used by map commands
-     * @param listValueStore store used by list commands
+     * @param keyValueStore    store used by map commands
+     * @param listValueStore   store used by list commands
      */
     protected StoresCommand(IStreamValueStore streamValueStore, IKeyValueStore keyValueStore, IListValueStore listValueStore) {
         this.streamValueStore = streamValueStore;

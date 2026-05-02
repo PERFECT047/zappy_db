@@ -3,7 +3,6 @@ package org.perfect047.command;
 import org.perfect047.storage.listvalue.IListValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.OutputStream;
 import java.util.List;
 
 public class LLenCommand extends ListValueCommand implements ICommand {

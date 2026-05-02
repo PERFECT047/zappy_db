@@ -47,7 +47,7 @@ public class EnvLoader {
 
     /**
      * Gets an environment variable, checking system env first, then .env cache.
-     * 
+     *
      * @param key The environment variable key
      * @return The value, or null if not found
      */
@@ -85,7 +85,7 @@ public class EnvLoader {
 
             // Remove quotes if present
             if ((value.startsWith("\"") && value.endsWith("\"")) ||
-                (value.startsWith("'") && value.endsWith("'"))) {
+                    (value.startsWith("'") && value.endsWith("'"))) {
                 value = value.substring(1, value.length() - 1);
             }
 

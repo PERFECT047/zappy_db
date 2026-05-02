@@ -3,7 +3,6 @@ package org.perfect047.command;
 import org.perfect047.storage.keyvalue.IKeyValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.OutputStream;
 import java.util.List;
 
 public class GetCommand extends KeyValueCommand implements ICommand {

@@ -8,6 +8,8 @@ import java.util.List;
  */
 public interface IStreamReader {
     List<Object> read(String listName, String startId);
+
     List<Object> range(String listName, String start, String end);
+
     String getLastId(String listName);
 }

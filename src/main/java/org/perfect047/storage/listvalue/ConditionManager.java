@@ -6,7 +6,8 @@ public class ConditionManager {
 
     /**
      * Gets or creates a condition for the given key using the provided lock.
-     * @param key The key to get the condition for
+     *
+     * @param key  The key to get the condition for
      * @param lock The lock to associate the condition with
      * @return The Condition for this key
      */
@@ -16,6 +17,7 @@ public class ConditionManager {
 
     /**
      * Removes the condition for a key.
+     *
      * @param key The key to remove the condition for
      */
     public void removeCondition(String key) {

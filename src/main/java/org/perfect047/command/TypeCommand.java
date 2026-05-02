@@ -5,13 +5,12 @@ import org.perfect047.storage.listvalue.IListValueStore;
 import org.perfect047.storage.streamvalue.IStreamValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.OutputStream;
 import java.util.List;
 
-public class TypeCommand extends StoresCommand implements ICommand{
+public class TypeCommand extends StoresCommand implements ICommand {
 
     public TypeCommand(IStreamValueStore streamValueStore, IKeyValueStore keyValueStore, IListValueStore listValueStore) {
-        super(streamValueStore,keyValueStore,listValueStore);
+        super(streamValueStore, keyValueStore, listValueStore);
     }
 
     @Override

@@ -2,8 +2,6 @@ package org.perfect047.command;
 
 import org.perfect047.storage.keyvalue.IKeyValueStore;
 
-import java.io.OutputStream;
-
 /**
  * Base type for commands that operate on the key-value store only.
  */

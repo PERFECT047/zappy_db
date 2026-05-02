@@ -8,5 +8,6 @@ import java.util.List;
  */
 public interface IListWriter {
     Integer leftAdd(String listName, List<String> values);
+
     Integer rightAdd(String listName, List<String> values);
 }

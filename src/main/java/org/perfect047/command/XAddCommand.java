@@ -4,7 +4,6 @@ import org.perfect047.storage.streamvalue.IStreamValueStore;
 import org.perfect047.util.RespString;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 
 public class XAddCommand extends StreamValueCommand implements ICommand {

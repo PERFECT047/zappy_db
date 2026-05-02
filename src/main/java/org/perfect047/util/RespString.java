@@ -53,25 +53,17 @@ public class RespString {
 
             if (value instanceof List<?>) {
                 sb.append(getRespArrayString((List<?>) value));
-            }
-
-            else if (value instanceof String str) {
+            } else if (value instanceof String str) {
                 sb.append("$")
                         .append(str.length())
                         .append("\r\n")
                         .append(str)
                         .append("\r\n");
-            }
-
-            else if (value instanceof Integer i) {
+            } else if (value instanceof Integer i) {
                 sb.append(":").append(i).append("\r\n");
-            }
-
-            else if (value == null) {
+            } else if (value == null) {
                 sb.append("$-1\r\n");
-            }
-
-            else {
+            } else {
                 String str = value.toString();
                 sb.append("$")
                         .append(str.length())

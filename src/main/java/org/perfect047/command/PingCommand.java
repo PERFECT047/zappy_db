@@ -2,17 +2,12 @@ package org.perfect047.command;
 
 import org.perfect047.util.RespString;
 
-import java.io.OutputStream;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class PingCommand extends BaseCommand implements ICommand{
+public class PingCommand implements ICommand {
 
     private static final Logger LOGGER = Logger.getLogger(PingCommand.class.getName());
-
-    public PingCommand(OutputStream outputStream){
-        super(outputStream);
-    }
 
     @Override
     public String execute(List<String> args) throws Exception {

@@ -2,9 +2,7 @@ package org.perfect047.command;
 
 import org.perfect047.storage.streamvalue.IStreamValueStore;
 
-import java.io.OutputStream;
-
-public class StreamValueCommand{
+public class StreamValueCommand {
 
     protected final IStreamValueStore streamValueStore;
 

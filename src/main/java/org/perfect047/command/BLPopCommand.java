@@ -3,10 +3,9 @@ package org.perfect047.command;
 import org.perfect047.storage.listvalue.IListValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.OutputStream;
 import java.util.List;
 
-public class BLPopCommand extends ListValueCommand implements ICommand{
+public class BLPopCommand extends ListValueCommand implements ICommand {
 
     public BLPopCommand(IListValueStore listValueStore) {
         super(listValueStore);
@@ -20,7 +19,7 @@ public class BLPopCommand extends ListValueCommand implements ICommand{
         String listName = args.get(1);
         float seconds = 0f;
 
-        if(args.size()>2) seconds = Float.parseFloat(args.get(2));
+        if (args.size() > 2) seconds = Float.parseFloat(args.get(2));
 
         return RespString.getRespArrayString(listValueStore.blockingLeftPop(listName, seconds));
     }

@@ -3,10 +3,9 @@ package org.perfect047.command;
 import org.perfect047.storage.keyvalue.IKeyValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.OutputStream;
 import java.util.List;
 
-public class SetCommand extends KeyValueCommand implements ICommand{
+public class SetCommand extends KeyValueCommand implements ICommand {
 
     public SetCommand(IKeyValueStore keyValueStore) {
         super(keyValueStore);
@@ -28,12 +27,12 @@ public class SetCommand extends KeyValueCommand implements ICommand{
         return RespString.getRespSimpleString(List.of("OK"));
     }
 
-    private Long getExpiry(String arg, String value){
-        if(arg == null) return null;
+    private Long getExpiry(String arg, String value) {
+        if (arg == null) return null;
 
         long millis = Long.parseLong(value);
 
-        switch(arg.toUpperCase()){
+        switch (arg.toUpperCase()) {
             case "PX":
                 break;
             case "EX":

@@ -29,7 +29,7 @@ public class ClientProcessor {
     /**
      * Processes raw input and returns RESP encoded response.
      *
-     * @param data input bytes
+     * @param data   input bytes
      * @param length valid length
      * @return RESP encoded response or null
      */

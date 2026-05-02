@@ -1,8 +1,8 @@
 package org.perfect047.concurrency;
 
+import org.perfect047.Enum.ConcurrencyStrategy;
 import org.perfect047.command.CommandFactory;
 import org.perfect047.util.SafeEnvParse;
-import org.perfect047.Enum.ConcurrencyStrategy;
 
 public class ConcurrencyFactory {
 
@@ -17,11 +17,11 @@ public class ConcurrencyFactory {
         int cores = Runtime.getRuntime().availableProcessors();
 
         int corePoolSize = Math.max(SafeEnvParse.getSafeEnvParse(
-                "THREAD_POOL_CORE_SIZE",
-                cores,
-                Integer::parseInt
+                        "THREAD_POOL_CORE_SIZE",
+                        cores,
+                        Integer::parseInt
                 ),
-            4);
+                4);
 
         int maxPoolSize = SafeEnvParse.getSafeEnvParse(
                 "THREAD_POOL_MAX_SIZE",
@@ -39,8 +39,11 @@ public class ConcurrencyFactory {
             case THREAD_POOL:
                 return new ThreadPool(commandFactory, port, corePoolSize, maxPoolSize, queueSize);
 
+            case NIO_EVENT_LOOP:
+                return new NioEventLoop(commandFactory, port, corePoolSize, maxPoolSize, queueSize);
+
             default:
-                return new ThreadPool(commandFactory, port, corePoolSize, maxPoolSize, queueSize);
+                return new NioEventLoop(commandFactory, port, corePoolSize, maxPoolSize, queueSize); // default behaviour
         }
     }
 }

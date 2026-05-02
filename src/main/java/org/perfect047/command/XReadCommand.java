@@ -3,7 +3,6 @@ package org.perfect047.command;
 import org.perfect047.storage.streamvalue.IStreamValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,7 +48,7 @@ public class XReadCommand extends StreamValueCommand implements ICommand {
         int n = remaining / 2;
 
         List<String> keys = args.subList(index, index + n);
-        List<String> ids  = args.subList(index + n, args.size());
+        List<String> ids = args.subList(index + n, args.size());
 
         List<Object> finalResult = new ArrayList<>();
 

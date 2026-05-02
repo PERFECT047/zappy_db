@@ -3,11 +3,11 @@ package org.perfect047.storage.streamvalue.idgenerator;
 public class StreamIdGeneratorFactory {
     private static final IStreamIdGenerator streamIdGenerator;
 
-    static{
+    static {
         streamIdGenerator = new DefaultStreamIdGenerator();
     }
 
-    public static IStreamIdGenerator getStreamIdGenerator(){
+    public static IStreamIdGenerator getStreamIdGenerator() {
         return streamIdGenerator;
     }
 }

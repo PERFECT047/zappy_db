@@ -5,7 +5,10 @@ import org.perfect047.handler.ClientHandler;
 
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,10 +30,10 @@ public class ThreadPool implements IConcurrencyStrategy {
 
     /**
      * @param commandFactory factory used to resolve commands
-     * @param port server port
-     * @param corePoolSize minimum number of threads
-     * @param maxPoolSize maximum number of threads
-     * @param queueSize task queue capacity
+     * @param port           server port
+     * @param corePoolSize   minimum number of threads
+     * @param maxPoolSize    maximum number of threads
+     * @param queueSize      task queue capacity
      */
     public ThreadPool(
             CommandFactory commandFactory,

@@ -3,12 +3,11 @@ package org.perfect047.command;
 import org.perfect047.storage.streamvalue.IStreamValueStore;
 import org.perfect047.util.RespString;
 
-import java.io.OutputStream;
 import java.util.List;
 
-public class XRangeCommand extends StreamValueCommand implements ICommand{
+public class XRangeCommand extends StreamValueCommand implements ICommand {
 
-    public XRangeCommand(IStreamValueStore streamValueStore){
+    public XRangeCommand(IStreamValueStore streamValueStore) {
         super(streamValueStore);
     }
 
