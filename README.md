@@ -179,73 +179,6 @@ to ensure:
 
 ## ⚠️ Notes on Benchmarking
 
-- Earlier results (~700k ops/s) were **non-pipelined and not representative**
-- Proper benchmarking requires:
-    - pipelining
-    - batching
-    - warmup
-- These results reflect a **realistic and fair comparison**
-
-## 🔹 Mixed Workload Benchmark (Latest)
-
-### ZappyDB (Thread Pool)
-
-| Metric      | Value             |
-|-------------|-------------------|
-| Throughput  | **759,877 ops/s** |
-| Avg Latency | 2.38 µs           |
-| P50         | 1.06 µs           |
-| P95         | 3.34 µs           |
-| P99         | 4.90 µs           |
-| Max         | 7.99 ms           |
-
----
-
-### Redis (same benchmark client)
-
-| Metric      | Value             |
-|-------------|-------------------|
-| Throughput  | **692,234 ops/s** |
-| Avg Latency | 2.53 µs           |
-| P50         | 1.09 µs           |
-| P95         | 3.59 µs           |
-| P99         | 5.39 µs           |
-| Max         | 12.0 ms           |
-
----
-
-## 🔹 Blocking List Benchmark
-
-| Metric      | ZappyDB       | Redis             |
-|-------------|---------------|-------------------|
-| Throughput  | 126,963 ops/s | **140,310 ops/s** |
-| Avg Latency | 27.04 µs      | 24.02 µs          |
-| P99         | 57 µs         | 56 µs             |
-
----
-
-## 📈 Performance Summary
-
-| Metric           | ZappyDB           | Redis      |
-|------------------|-------------------|------------|
-| Total Throughput | **759k ops/s**    | 692k ops/s |
-| P50 Latency      | ~1.06 µs          | ~1.09 µs   |
-| P99 Latency      | ~4.90 µs          | ~5.39 µs   |
-| Throughput Gain  | **~9–10% faster** | —          |
-
----
-
-## 🧠 Key Takeaways
-
-- ZappyDB achieves **~10% higher throughput** under realistic CPU constraints
-- Thread pool–based concurrency significantly improves performance
-- Latency is **consistently low and stable**
-- Performance gains come from **architecture (not benchmark tricks)**
-
----
-
-## ⚠️ Notes on Benchmarking
-
 - Both systems are tested using the same workload and client
 - No Redis-specific optimizations (like pipelining)
 - Threads = CPU cores → no artificial scaling
@@ -338,18 +271,20 @@ ZappyDB/
 
 ## 📋 Supported Commands
 
-| Command | Description          |
-|---------|----------------------|
-| PING    | Ping the server      |
-| ECHO    | Echo back message    |
-| GET     | Get value by key     |
-| SET     | Set key-value pair   |
-| LPUSH   | Push to list (left)  |
-| RPUSH   | Push to list (right) |
-| LPOP    | Pop from list (left) |
-| LLEN    | List length          |
-| LRANGE  | Get list range       |
-| BLPOP   | Blocking list pop    |
+| Command | Description                          |
+|---------|--------------------------------------|
+| PING    | Ping the server                      |
+| ECHO    | Echo back message                    |
+| GET     | Get value by key                     |
+| SET     | Set key-value pair                   |
+| LPUSH   | Push to list (left)                  |
+| RPUSH   | Push to list (right)                 |
+| LPOP    | Pop from list (left)                 |
+| LLEN    | List length                          |
+| LRANGE  | Get list range                       |
+| BLPOP   | Blocking list pop                    |
+| XREAD   | Blocking and non-blocking stream read|
+| XADD    | Push to stream                       |
 
 ## 🔧 Configuration
 
