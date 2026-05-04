@@ -73,4 +73,20 @@ public class KeyValueStore implements IKeyValueStore {
     public String type(String key) {
         return store.get(key) != null ? "string" : null;
     }
+
+    @Override
+    public Integer increment(String key) {
+        ReentrantReadWriteLock lock = lockManager.getLock(key);
+        lock.writeLock().lock();
+
+        try {
+            Integer updatedValue = Integer.parseInt(store.computeIfAbsent(key, k -> "0")) + 1;
+            store.put(key, updatedValue.toString());
+            return updatedValue;
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("ERR value is not an integer or out of range");
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
 }
