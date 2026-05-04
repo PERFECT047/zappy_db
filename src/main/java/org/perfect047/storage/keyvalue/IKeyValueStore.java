@@ -8,4 +8,6 @@ public interface IKeyValueStore extends ITypeStore {
 
     String get(String key);
 
+    Integer increment(String key);
+
 }

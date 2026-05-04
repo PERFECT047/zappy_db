@@ -48,6 +48,7 @@ public class CommandFactory {
         commandRegistry.put("XRANGE", new XRangeCommand(streamValueStore));
         commandRegistry.put("XREAD", new XReadCommand(streamValueStore));
         commandRegistry.put("TYPE", new TypeCommand(streamValueStore, keyValueStore, listValueStore));
+        commandRegistry.put("INCR", new IncrCommand(keyValueStore));
     }
 
     public ICommand getCommand(String commandName) {
